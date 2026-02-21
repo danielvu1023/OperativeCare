@@ -15,14 +15,14 @@ export default function AlertHistoryTable() {
   if (!sortNewest) filtered = [...filtered].reverse();
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+    <div className="bg-surface border border-border rounded-xl p-5">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold">Alert History</h2>
+        <h2 className="text-lg font-semibold text-foreground">Alert History</h2>
         <div className="flex items-center gap-2">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as SeverityLevel | "all")}
-            className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-300"
+            className="bg-surface-raised border border-border text-sm rounded-lg px-3 py-1.5 text-foreground"
           >
             <option value="all">All Severities</option>
             {LEVELS.map((l) => (
@@ -33,13 +33,13 @@ export default function AlertHistoryTable() {
           </select>
           <button
             onClick={() => setSortNewest((s) => !s)}
-            className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-slate-300 hover:bg-slate-700"
+            className="bg-surface-raised border border-border text-sm rounded-lg px-3 py-1.5 text-foreground hover:bg-border transition-colors"
           >
             {sortNewest ? "Newest First" : "Oldest First"}
           </button>
           <button
             onClick={clearAlerts}
-            className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 text-red-400 hover:bg-red-900/30 flex items-center gap-1"
+            className="bg-surface-raised border border-border text-sm rounded-lg px-3 py-1.5 text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors"
           >
             <Trash2 size={14} />
             Clear
@@ -48,12 +48,12 @@ export default function AlertHistoryTable() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-slate-500 text-sm py-8 text-center">No alerts to display.</p>
+        <p className="text-foreground-subtle text-sm py-8 text-center">No alerts to display.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-800">
+              <tr className="text-left text-xs text-foreground-subtle uppercase tracking-wider border-b border-border">
                 <th className="pb-2 pr-4">Time</th>
                 <th className="pb-2 pr-4">Severity</th>
                 <th className="pb-2 pr-4">Route To</th>
@@ -62,15 +62,15 @@ export default function AlertHistoryTable() {
             </thead>
             <tbody>
               {filtered.map((a) => (
-                <tr key={a.id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
-                  <td className="py-2 pr-4 text-slate-400 whitespace-nowrap">
+                <tr key={a.id} className="border-b border-border hover:bg-surface-raised">
+                  <td className="py-2 pr-4 text-foreground-muted whitespace-nowrap">
                     {new Date(a.timestamp).toLocaleTimeString()}
                   </td>
                   <td className="py-2 pr-4">
                     <SeverityBadge level={a.severityLevel} />
                   </td>
-                  <td className="py-2 pr-4 text-slate-300">{a.routeTo}</td>
-                  <td className="py-2 text-slate-300">{a.reason}</td>
+                  <td className="py-2 pr-4 text-foreground">{a.routeTo}</td>
+                  <td className="py-2 text-foreground">{a.reason}</td>
                 </tr>
               ))}
             </tbody>
@@ -78,7 +78,7 @@ export default function AlertHistoryTable() {
         </div>
       )}
 
-      <p className="text-xs text-slate-600 mt-3">
+      <p className="text-xs text-foreground-subtle mt-3">
         Showing {filtered.length} of {alerts.length} total alerts
       </p>
     </div>

@@ -28,27 +28,27 @@ export default function SimulationControls({
     <div className="flex flex-wrap items-center gap-3">
       <button
         onClick={onTogglePlay}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm font-medium hover:bg-slate-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised border border-border text-sm font-medium text-foreground hover:bg-border transition-colors"
       >
         {playing ? <Pause size={16} /> : <Play size={16} />}
         {playing ? "Pause" : "Play"}
       </button>
       <button
         onClick={onReset}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm font-medium hover:bg-slate-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised border border-border text-sm font-medium text-foreground hover:bg-border transition-colors"
       >
         <RotateCcw size={16} />
         Reset to Normal
       </button>
       <button
         onClick={onTriggerCritical}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-900/40 border border-red-700 text-sm font-medium text-red-300 hover:bg-red-900/60 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 border border-red-600 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors"
       >
         <Zap size={16} />
         Trigger Critical
       </button>
       {scenario !== "none" && (
-        <span className="text-xs px-3 py-1 rounded-full bg-orange-900/30 border border-orange-700 text-orange-400 animate-pulse">
+        <span className="text-xs px-3 py-1 rounded-full bg-orange-50 border border-orange-600 text-orange-800 animate-pulse">
           Scenario: {SCENARIO_LABELS[scenario]}
         </span>
       )}

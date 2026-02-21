@@ -16,9 +16,9 @@ function getStatus(value: number, range: VitalRange) {
 }
 
 const STATUS_STYLES = {
-  normal: { border: "border-emerald-500/40", color: "text-emerald-400", line: "#34d399" },
-  warning: { border: "border-yellow-500/60", color: "text-yellow-400", line: "#facc15" },
-  critical: { border: "border-red-500/80", color: "text-red-400", line: "#f87171" },
+  normal: { border: "border-green-500/50", color: "text-green-700", line: "#15803d" },
+  warning: { border: "border-amber-500/60", color: "text-amber-700", line: "#b45309" },
+  critical: { border: "border-red-500/70", color: "text-red-700", line: "#b91c1c" },
 };
 
 export default function VitalCard({ vitalKey, value, history }: VitalCardProps) {
@@ -33,19 +33,19 @@ export default function VitalCard({ vitalKey, value, history }: VitalCardProps) 
 
   return (
     <div
-      className={`bg-slate-900 border-2 ${styles.border} rounded-xl p-4 flex flex-col gap-2 transition-all duration-300`}
+      className={`bg-surface border-2 ${styles.border} rounded-xl p-4 flex flex-col gap-2 transition-all duration-300`}
     >
       <div className="flex items-baseline justify-between">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-foreground-muted uppercase tracking-wider">
           {range.label}
         </span>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-foreground-subtle">
           {range.warningLow}–{range.warningHigh} {range.unit}
         </span>
       </div>
       <div className={`text-3xl font-bold tabular-nums ${styles.color} transition-colors duration-300`}>
         {value}
-        <span className="text-sm font-normal text-slate-500 ml-1">{range.unit}</span>
+        <span className="text-sm font-normal text-foreground-subtle ml-1">{range.unit}</span>
       </div>
       {chartData.length > 1 && (
         <div className="h-12 mt-1">

@@ -35,12 +35,12 @@ export default function TriagePanel({ triage }: Props) {
 
   return (
     <div
-      className={`bg-slate-900 border-2 ${c.border} rounded-xl p-5 transition-all duration-500 ${c.glow} ${
+      className={`bg-surface border-2 ${c.border} rounded-xl p-5 transition-all duration-500 ${c.glow} ${
         flash ? "animate-pulse" : ""
       }`}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+        <h3 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider">
           Triage Status
         </h3>
         <SeverityBadge level={triage.severityLevel} />
@@ -51,13 +51,13 @@ export default function TriagePanel({ triage }: Props) {
           <Icon size={20} className={c.text} />
         </div>
         <div>
-          <p className="text-sm text-slate-400">Route to</p>
+          <p className="text-sm text-foreground-muted">Route to</p>
           <p className={`font-semibold ${c.text}`}>{triage.routeTo}</p>
         </div>
       </div>
 
-      <p className="text-sm text-slate-300 leading-relaxed">{triage.reason}</p>
-      <p className="text-xs text-slate-600 mt-2">
+      <p className="text-sm text-foreground leading-relaxed">{triage.reason}</p>
+      <p className="text-xs text-foreground-subtle mt-2">
         {timeStr}
       </p>
     </div>

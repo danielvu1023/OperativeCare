@@ -1,33 +1,112 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #020617;
-  --foreground: #e2e8f0;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-raised: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --foreground: #0f172a;
+  --foreground-muted: #475569;
+  --foreground-subtle: #94a3b8;
+  --primary: #1e40af;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --primary-foreground: #ffffff;
+
+  /* Severity tokens */
+  --severity-normal-bg: #f0fdf4;
+  --severity-normal-border: #16a34a;
+  --severity-normal-text: #15803d;
+  --severity-warning-bg: #fffbeb;
+  --severity-warning-border: #d97706;
+  --severity-warning-text: #b45309;
+  --severity-urgent-bg: #fff7ed;
+  --severity-urgent-border: #ea580c;
+  --severity-urgent-text: #c2410c;
+  --severity-critical-bg: #fef2f2;
+  --severity-critical-border: #dc2626;
+  --severity-critical-text: #b91c1c;
+
+  /* Nav (stays dark) */
+  --nav-bg: #0f172a;
+  --nav-border: #1e293b;
+  --nav-text: #94a3b8;
+  --nav-text-active: #ffffff;
+  --nav-item-active: #1e293b;
+  --nav-item-hover: #1e293b;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-severity-normal-bg: var(--severity-normal-bg);
+  --color-severity-normal-border: var(--severity-normal-border);
+  --color-severity-normal-text: var(--severity-normal-text);
+  --color-severity-warning-bg: var(--severity-warning-bg);
+  --color-severity-warning-border: var(--severity-warning-border);
+  --color-severity-warning-text: var(--severity-warning-text);
+  --color-severity-urgent-bg: var(--severity-urgent-bg);
+  --color-severity-urgent-border: var(--severity-urgent-border);
+  --color-severity-urgent-text: var(--severity-urgent-text);
+  --color-severity-critical-bg: var(--severity-critical-bg);
+  --color-severity-critical-border: var(--severity-critical-border);
+  --color-severity-critical-text: var(--severity-critical-text);
+
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-border: var(--nav-border);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Custom scrollbar for dark theme */
+/* Scrollbar for light theme */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
+}
+
+/* Nav sidebar stays dark */
+.sidebar {
+  background: var(--nav-bg);
+  border-color: var(--nav-border);
+  color: var(--nav-text);
+}
+
+@layer base {
+  .clinical-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+  }
+}
+
+@keyframes pulse-critical {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }

@@ -39,16 +39,16 @@ export default function ProviderInbox() {
       <div className="space-y-6">
         {/* Active */}
         <section>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider mb-3 flex items-center gap-2">
             Active
             {active.length > 0 && (
-              <span className="bg-red-900/40 text-red-400 border border-red-700 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-red-50 text-red-700 border border-red-600 text-xs px-2 py-0.5 rounded-full">
                 {active.length}
               </span>
             )}
           </h2>
           {active.length === 0 ? (
-            <p className="text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <p className="text-foreground-subtle text-sm bg-surface border border-border rounded-xl p-4">
               No active alerts. All clear.
             </p>
           ) : (
@@ -68,16 +68,16 @@ export default function ProviderInbox() {
 
         {/* Acknowledged */}
         <section>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider mb-3 flex items-center gap-2">
             Acknowledged
             {acknowledged.length > 0 && (
-              <span className="bg-cyan-900/30 text-cyan-400 border border-cyan-700 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-primary-light text-primary border border-primary text-xs px-2 py-0.5 rounded-full">
                 {acknowledged.length}
               </span>
             )}
           </h2>
           {acknowledged.length === 0 ? (
-            <p className="text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <p className="text-foreground-subtle text-sm bg-surface border border-border rounded-xl p-4">
               No acknowledged alerts.
             </p>
           ) : (
@@ -96,16 +96,16 @@ export default function ProviderInbox() {
 
         {/* Dismissed */}
         <section>
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground-muted uppercase tracking-wider mb-3 flex items-center gap-2">
             Dismissed
             {dismissed.length > 0 && (
-              <span className="bg-slate-700 text-slate-400 border border-slate-600 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-surface-raised text-foreground-muted border border-border-strong text-xs px-2 py-0.5 rounded-full">
                 {dismissed.length}
               </span>
             )}
           </h2>
           {dismissed.length === 0 ? (
-            <p className="text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <p className="text-foreground-subtle text-sm bg-surface border border-border rounded-xl p-4">
               No dismissed alerts.
             </p>
           ) : (

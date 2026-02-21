@@ -75,10 +75,10 @@ export const VITAL_RANGES: Record<string, VitalRange> = {
 export type SeverityLevel = "normal" | "warning" | "urgent" | "critical";
 
 export const SEVERITY_COLORS: Record<SeverityLevel, { bg: string; text: string; border: string; glow: string }> = {
-  normal: { bg: "bg-emerald-900/30", text: "text-emerald-400", border: "border-emerald-500", glow: "" },
-  warning: { bg: "bg-yellow-900/30", text: "text-yellow-400", border: "border-yellow-500", glow: "" },
-  urgent: { bg: "bg-orange-900/30", text: "text-orange-400", border: "border-orange-500", glow: "shadow-orange-500/30 shadow-lg" },
-  critical: { bg: "bg-red-900/30", text: "text-red-400", border: "border-red-500", glow: "shadow-red-500/50 shadow-xl" },
+  normal:   { bg: "bg-green-50",   text: "text-green-800",  border: "border-green-600",  glow: "" },
+  warning:  { bg: "bg-amber-50",   text: "text-amber-800",  border: "border-amber-600",  glow: "" },
+  urgent:   { bg: "bg-orange-50",  text: "text-orange-800", border: "border-orange-600", glow: "shadow-orange-200 shadow-md" },
+  critical: { bg: "bg-red-50",     text: "text-red-800",    border: "border-red-600",    glow: "shadow-red-200 shadow-lg ring-1 ring-red-300" },
 };
 
 export const PROVIDER_ROUTING: Record<SeverityLevel, { provider: string; icon: string }> = {

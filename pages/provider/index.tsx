@@ -48,10 +48,10 @@ export default function ProviderDashboard() {
         {triageMatchesRole ? (
           <TriagePanel triage={triage} />
         ) : (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex items-center justify-center">
+          <div className="bg-surface border border-border rounded-xl p-5 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-slate-400 text-sm font-medium">No action required</p>
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="text-foreground-muted text-sm font-medium">No action required</p>
+              <p className="text-foreground-subtle text-xs mt-1">
                 Current triage is routed to {triage.routeTo}
               </p>
             </div>

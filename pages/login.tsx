@@ -28,8 +28,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold mb-2">Select Your Role</h1>
-      <p className="text-slate-400 text-sm mb-8">Choose your provider role to see relevant alerts and actions</p>
+      <h1 className="text-2xl font-bold mb-2 text-foreground">Select Your Role</h1>
+      <p className="text-foreground-muted text-sm mb-8">Choose your provider role to see relevant alerts and actions</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl w-full mb-8">
         {roles.map(([key, config]) => {
@@ -41,14 +41,14 @@ export default function LoginPage() {
             <button
               key={key}
               onClick={() => handleRoleSelect(key)}
-              className={`flex flex-col items-start gap-3 p-5 rounded-xl bg-slate-900 border-2 border-slate-800 hover:border-slate-600 transition-all text-left group hover:bg-slate-800/50`}
+              className={`flex flex-col items-start gap-3 p-5 rounded-xl bg-surface border-2 border-border hover:border-border-strong transition-all text-left group hover:bg-surface-raised`}
             >
               <div className="flex items-center gap-3 w-full">
                 <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center`}>
                   <Icon size={20} className={colors.text} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-slate-100 group-hover:text-white">
+                  <p className="font-semibold text-foreground">
                     {config.label}
                   </p>
                 </div>
@@ -56,7 +56,7 @@ export default function LoginPage() {
                   {severity}
                 </span>
               </div>
-              <p className="text-sm text-slate-400">{config.description}</p>
+              <p className="text-sm text-foreground-muted">{config.description}</p>
             </button>
           );
         })}
@@ -64,7 +64,7 @@ export default function LoginPage() {
 
       <button
         onClick={handleMonitorStation}
-        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-slate-800 border border-slate-700 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-surface-raised border border-border text-sm font-medium text-foreground-muted hover:bg-border hover:text-foreground transition-colors"
       >
         <Monitor size={18} />
         Monitor Station (All Access)

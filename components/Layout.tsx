@@ -17,8 +17,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         onClick={() => setMenuOpen(false)}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
           active
-            ? "bg-slate-700 text-white"
-            : "text-slate-400 hover:text-white hover:bg-slate-800"
+            ? "bg-[var(--nav-item-active)] text-white"
+            : "text-[var(--nav-text)] hover:text-white hover:bg-[var(--nav-item-hover)]"
         }`}
       >
         <Icon size={16} />
@@ -28,12 +28,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur border-b border-slate-800">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="sticky top-0 z-50 bg-nav-bg/80 backdrop-blur border-b border-nav-border">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Activity className="text-cyan-400" size={22} />
-            <span className="font-bold text-lg tracking-tight">
+            <span className="font-bold text-lg tracking-tight text-white">
               PostOp Monitor
             </span>
           </div>
@@ -49,8 +49,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </>
             )}
             {role !== null ? (
-              <div className="flex items-center gap-2 ml-3 pl-3 border-l border-slate-700">
-                <span className="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full">
+              <div className="flex items-center gap-2 ml-3 pl-3 border-l border-[var(--nav-border)]">
+                <span className="text-xs text-[var(--nav-text)] bg-[var(--nav-item-active)] px-2.5 py-1 rounded-full">
                   {roleConfig?.label}
                 </span>
                 <Link
@@ -63,7 +63,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-2"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[var(--nav-text)] hover:text-white hover:bg-[var(--nav-item-hover)] transition-colors ml-2"
               >
                 <LogIn size={16} />
                 Sign In
@@ -74,7 +74,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="md:hidden p-2 rounded-lg text-[var(--nav-text)] hover:text-white hover:bg-[var(--nav-item-hover)] transition-colors"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -82,7 +82,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile dropdown */}
         {menuOpen && (
-          <div className="md:hidden border-t border-slate-800 px-4 py-3 space-y-1 bg-slate-900/95 backdrop-blur">
+          <div className="md:hidden border-t border-nav-border px-4 py-3 space-y-1 bg-nav-bg/95 backdrop-blur">
             {navLink("/", "Dashboard", Activity)}
             {navLink("/alerts", "Alerts", Bell)}
             {role !== null && (
@@ -92,8 +92,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </>
             )}
             {role !== null ? (
-              <div className="flex items-center gap-2 pt-2 mt-2 border-t border-slate-800">
-                <span className="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full">
+              <div className="flex items-center gap-2 pt-2 mt-2 border-t border-nav-border">
+                <span className="text-xs text-[var(--nav-text)] bg-[var(--nav-item-active)] px-2.5 py-1 rounded-full">
                   {roleConfig?.label}
                 </span>
                 <Link
