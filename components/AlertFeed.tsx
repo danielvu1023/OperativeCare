@@ -35,7 +35,6 @@ function relativeTime(ts: number): string {
 
 export default function AlertFeed() {
   const { alerts } = useAlerts();
-  console.log("testing");
   const sorted = [...alerts]
     .sort((a, b) => {
       const pd = SEVERITY_PRIORITY[a.severityLevel] - SEVERITY_PRIORITY[b.severityLevel];
