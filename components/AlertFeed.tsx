@@ -9,6 +9,7 @@ const SEVERITY_PRIORITY: Record<SeverityLevel, number> = {
   normal: 3,
 };
 
+
 const LEFT_BORDER: Record<SeverityLevel, string> = {
   normal: "border-l-green-500",
   warning: "border-l-amber-500",
@@ -34,7 +35,6 @@ function relativeTime(ts: number): string {
 
 export default function AlertFeed() {
   const { alerts } = useAlerts();
-
   const sorted = [...alerts]
     .sort((a, b) => {
       const pd = SEVERITY_PRIORITY[a.severityLevel] - SEVERITY_PRIORITY[b.severityLevel];
