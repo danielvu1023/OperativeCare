@@ -1,0 +1,35 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Review this pull request for the postop-monitor app — a clinical postoperative patient monitoring dashboard.
+
+            Focus only on issues that matter:
+            1. **Patient safety** — any logic errors in vitals evaluation, triage severity, or alert routing
+            2. **Bugs** — runtime errors, null/undefined access, incorrect logic
+            3. **Security** — exposed secrets, missing RLS, unsafe Supabase queries
+            4. **Performance** — unnecessary re-renders in real-time vitals components
+            5. **TypeScript** — use of `any`, missing types on props or return values
+
+            Skip minor style suggestions, formatting, and naming preferences unless they cause real issues.
+            Be concise — only comment where there is a clear problem or risk.
+
+            Refer to CLAUDE.md for project conventions and clinical context.

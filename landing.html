@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PostOp Monitor — Real-Time Post-Operative Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────────────── */
+    :root {
+      --bg:            #f8fafc;
+      --surface:       #ffffff;
+      --surface-r:     #f1f5f9;
+      --border:        #e2e8f0;
+      --border-s:      #cbd5e1;
+      --fg:            #0f172a;
+      --fg-muted:      #475569;
+      --fg-subtle:     #94a3b8;
+      --primary:       #1e40af;
+      --primary-h:     #1d4ed8;
+      --primary-l:     #eff6ff;
+      --nav-bg:        #0f172a;
+      --nav-border:    #1e293b;
+      --nav-text:      #94a3b8;
+      --cyan:          #22d3ee;
+      --cyan-dim:      rgba(34,211,238,0.15);
+
+      --sev-n-bg: #f0fdf4; --sev-n-b: #16a34a; --sev-n-t: #15803d;
+      --sev-w-bg: #fffbeb; --sev-w-b: #d97706; --sev-w-t: #b45309;
+      --sev-u-bg: #fff7ed; --sev-u-b: #ea580c; --sev-u-t: #c2410c;
+      --sev-c-bg: #fef2f2; --sev-c-b: #dc2626; --sev-c-t: #b91c1c;
+
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+    }
+
+    /* ─── RESET ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { text-decoration: none; color: inherit; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface-r); }
+    ::-webkit-scrollbar-thumb { background: var(--border-s); border-radius: 3px; }
+
+    /* ─── NAV ─────────────────────────────────────────────────────── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 56px; padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled {
+      background: rgba(15,23,42,0.92);
+      backdrop-filter: blur(12px);
+      border-color: var(--nav-border);
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      color: white; letter-spacing: -0.01em;
+    }
+    .nav-pulse {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--cyan);
+      animation: heartbeat 1.2s ease-in-out infinite;
+    }
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-links a { font-size: 13px; font-weight: 500; color: var(--nav-text); transition: color 0.2s; }
+    .nav-links a:hover { color: white; }
+    .nav-cta {
+      padding: 7px 18px; border-radius: 8px;
+      background: var(--primary); color: white;
+      font-size: 13px; font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: var(--primary-h); transform: translateY(-1px); }
+
+    /* ─── HERO ────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; background: var(--nav-bg);
+      position: relative; overflow: hidden;
+      display: flex; align-items: center;
+      padding: 5rem 2rem 4rem;
+    }
+    /* Dot grid background */
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(148,163,184,0.12) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    /* Gradient vignette */
+    .hero::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(30,64,175,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 80% at 80% 50%, rgba(34,211,238,0.04) 0%, transparent 70%);
+    }
+
+    /* ECG canvas */
+    #ecg-canvas {
+      position: absolute; left: 0; right: 0; bottom: 80px;
+      width: 100%; height: 90px; opacity: 0.22; pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Scan line */
+    .scan-line {
+      position: absolute; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(34,211,238,0.4), transparent);
+      animation: scanDown 8s linear infinite; z-index: 1; pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative; z-index: 2;
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    }
+
+    /* Left: text */
+    .hero-text .eyebrow {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; animation: fadeUp 0.7s 0.2s forwards;
+    }
+    .hero-text .eyebrow::before {
+      content: ''; width: 32px; height: 1px; background: var(--cyan);
+    }
+    .hero-text h1 {
+      font-family: var(--font-display); font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 800; line-height: 1.1; letter-spacing: -0.02em;
+      color: white; margin-bottom: 1.25rem;
+      opacity: 0; animation: fadeUp 0.7s 0.4s forwards;
+    }
+    .hero-text h1 em { font-style: italic; color: var(--cyan); }
+    .hero-text p {
+      font-size: 16px; font-weight: 300; color: rgba(148,163,184,0.9);
+      line-height: 1.8; max-width: 480px; margin-bottom: 2.5rem;
+      opacity: 0; animation: fadeUp 0.7s 0.6s forwards;
+    }
+    .hero-actions {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.7s 0.8s forwards;
+    }
+    .btn-hero-primary {
+      padding: 12px 28px; border-radius: 10px;
+      background: var(--primary); color: white;
+      font-size: 14px; font-weight: 600; font-family: var(--font-body);
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .btn-hero-primary:hover {
+      background: var(--primary-h); transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(30,64,175,0.4);
+    }
+    .btn-hero-ghost {
+      padding: 12px 24px; border-radius: 10px;
+      background: transparent; color: var(--nav-text);
+      font-size: 14px; font-weight: 500; font-family: var(--font-body);
+      border: 1px solid rgba(148,163,184,0.2);
+      transition: color 0.2s, border-color 0.2s, transform 0.15s;
+      cursor: pointer;
+    }
+    .btn-hero-ghost:hover { color: white; border-color: rgba(148,163,184,0.5); transform: translateY(-2px); }
+
+    /* Right: live vitals monitor */
+    .hero-monitor {
+      opacity: 0; animation: fadeUp 0.8s 0.6s forwards;
+    }
+    .monitor-frame {
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(148,163,184,0.12);
+      border-radius: 16px; padding: 1.25rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .monitor-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem; padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(148,163,184,0.1);
+    }
+    .monitor-title {
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--nav-text);
+    }
+    .monitor-live {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-mono); font-size: 10px; color: var(--cyan);
+    }
+    .monitor-live-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--cyan);
+      animation: heartbeat 1.2s ease-in-out infinite;
+    }
+    .vitals-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .vital-tile {
+      background: rgba(30,41,59,0.6);
+      border: 1px solid rgba(148,163,184,0.1);
+      border-radius: 10px; padding: 12px 14px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .vital-tile.warning { border-color: rgba(245,158,11,0.4); }
+    .vital-tile-accent {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      border-radius: 10px 0 0 10px;
+    }
+    .accent-normal  { background: #22c55e; }
+    .accent-warning { background: #f59e0b; }
+    .vital-tile-label {
+      font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--nav-text); margin-bottom: 4px;
+    }
+    .vital-tile-value {
+      font-family: var(--font-mono); font-size: 26px; font-weight: 600;
+      line-height: 1; font-variant-numeric: tabular-nums;
+      color: white; letter-spacing: -0.02em;
+    }
+    .vital-tile-value.warning { color: #fbbf24; }
+    .vital-tile-unit {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+      color: var(--nav-text); margin-left: 3px;
+    }
+    .vital-tile-trend {
+      font-size: 12px; margin-left: 4px; vertical-align: middle;
+    }
+    .vital-sparkline-mini {
+      height: 32px; margin-top: 8px; opacity: 0.7;
+    }
+
+    /* Status bar in hero */
+    .hero-status {
+      margin-top: 1rem; border-radius: 8px; padding: 9px 14px;
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid; transition: all 0.6s ease;
+      font-family: var(--font-mono); font-size: 11px;
+    }
+    .hero-status-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    .hero-status-label { font-weight: 600; letter-spacing: 0.05em; flex-shrink: 0; }
+    .hero-status-reason { flex: 1; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-status-route { opacity: 0.55; flex-shrink: 0; }
+
+    /* ─── SECTION COMMON ─────────────────────────────────────────── */
+    .section { padding: 6rem 2rem; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 800; letter-spacing: -0.02em; color: var(--fg);
+      line-height: 1.15; margin-bottom: 1rem;
+    }
+    .section-sub {
+      font-size: 16px; font-weight: 300; color: var(--fg-muted);
+      max-width: 580px; line-height: 1.8;
+    }
+
+    /* ─── REVEAL ANIMATION ───────────────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── DASHBOARD PREVIEW ──────────────────────────────────────── */
+    .preview-section { background: var(--bg); padding: 6rem 2rem; }
+    .browser-frame {
+      background: var(--surface-r); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(15,23,42,0.12);
+    }
+    .browser-chrome {
+      background: #e8ecf0; padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #d0d5dd;
+    }
+    .browser-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .browser-bar {
+      flex: 1; max-width: 420px; margin: 0 auto;
+      background: white; border-radius: 6px; padding: 5px 12px;
+      font-size: 11px; color: #6b7280; font-family: var(--font-mono);
+      border: 1px solid #d0d5dd;
+    }
+
+    /* Mock dashboard inside frame */
+    .mock-dash { background: var(--bg); }
+    .mock-nav {
+      background: var(--nav-bg); border-bottom: 1px solid var(--nav-border);
+      padding: 0 1.25rem; height: 46px;
+      display: flex; align-items: center; justify-between; gap: 2rem;
+    }
+    .mock-nav-brand {
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      color: white; display: flex; align-items: center; gap: 7px; white-space: nowrap;
+    }
+    .mock-nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); animation: heartbeat 1.2s ease-in-out infinite; }
+    .mock-nav-links { display: flex; gap: 2px; margin-left: auto; }
+    .mock-nav-link {
+      padding: 4px 12px; border-radius: 6px;
+      font-size: 11px; font-weight: 500; color: var(--nav-text);
+    }
+    .mock-nav-link.active { background: var(--nav-border); color: white; }
+    .mock-body { padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Mock patient header */
+    .mock-patient {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .mock-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--primary-l); display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+    }
+    .mock-patient-name { font-size: 13px; font-weight: 700; color: var(--fg); }
+    .mock-patient-sub { font-size: 11px; color: var(--fg-muted); }
+    .mock-patient-meta { display: flex; gap: 10px; font-size: 11px; color: var(--fg-muted); flex-wrap: wrap; margin-left: auto; }
+    .mock-allergy {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+      background: var(--sev-c-bg); color: var(--sev-c-t); border: 1px solid var(--sev-c-b);
+    }
+
+    /* Mock status bar */
+    .mock-status {
+      border-radius: 8px; padding: 7px 12px;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--sev-n-bg); border: 1px solid var(--sev-n-b);
+    }
+    .mock-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sev-n-b); }
+    .mock-status-text { font-size: 11px; font-weight: 700; color: var(--sev-n-t); font-family: var(--font-mono); }
+    .mock-status-reason { font-size: 11px; color: var(--sev-n-t); opacity: 0.8; flex: 1; font-family: var(--font-mono); }
+
+    /* Mock vitals row */
+    .mock-vitals { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .mock-vital-card {
+      background: var(--surface); border: 2px solid;
+      border-radius: 8px; overflow: hidden; position: relative;
+    }
+    .mock-vital-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .mock-vital-inner { padding: 8px 10px; }
+    .mock-vital-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); margin-bottom: 2px; }
+    .mock-vital-val { font-family: var(--font-mono); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .mock-vital-unit { font-size: 9px; color: var(--fg-subtle); margin-left: 2px; }
+
+    /* Mock bottom grid */
+    .mock-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mock-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    }
+    .mock-panel-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); margin-bottom: 8px; }
+    .mock-triage {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .mock-triage-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 12px;
+      background: var(--sev-n-bg);
+    }
+    .mock-triage-route { font-size: 11px; font-weight: 600; color: var(--sev-n-t); }
+    .mock-triage-reason { font-size: 10px; color: var(--fg-muted); line-height: 1.4; }
+    .mock-alert-row {
+      display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+      border-radius: 6px; margin-bottom: 4px; border-left: 3px solid;
+      font-size: 10px;
+    }
+
+    /* ─── FEATURES ───────────────────────────────────────────────── */
+    .features-section { background: var(--surface); padding: 6rem 2rem; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3.5rem; }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 2rem; position: relative; overflow: hidden;
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 48px rgba(15,23,42,0.08);
+      border-color: var(--border-s);
+    }
+    .feature-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(30,64,175,0.03) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--primary-l); border: 1px solid rgba(30,64,175,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 1.25rem;
+    }
+    .feature-title {
+      font-family: var(--font-display); font-size: 19px; font-weight: 700;
+      letter-spacing: -0.01em; color: var(--fg); margin-bottom: 0.6rem;
+    }
+    .feature-desc { font-size: 14px; font-weight: 300; color: var(--fg-muted); line-height: 1.7; }
+    .feature-stat {
+      margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 11px; color: var(--fg-subtle);
+    }
+    .feature-stat strong { color: var(--primary); font-weight: 600; font-size: 14px; margin-right: 4px; }
+
+    /* ─── SEVERITY ───────────────────────────────────────────────── */
+    .severity-section { background: var(--nav-bg); padding: 6rem 2rem; position: relative; overflow: hidden; }
+    .severity-section::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(148,163,184,0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .severity-section .section-title { color: white; }
+    .severity-section .section-sub { color: var(--nav-text); }
+    .severity-section .section-label { color: var(--cyan); }
+    .severity-bars { display: flex; flex-direction: column; gap: 12px; margin-top: 3rem; }
+    .sev-bar {
+      display: grid; grid-template-columns: 120px 1fr auto;
+      align-items: center; gap: 1.5rem;
+      padding: 1rem 1.5rem; border-radius: 12px;
+      border: 1px solid; position: relative; overflow: hidden;
+      transform: translateX(-40px); opacity: 0;
+      transition: transform 0.6s ease, opacity 0.6s ease, box-shadow 0.3s;
+    }
+    .sev-bar.visible { transform: translateX(0); opacity: 1; }
+    .sev-bar:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .sev-bar-normal   { background: rgba(21,128,61,0.12); border-color: rgba(22,163,74,0.3); }
+    .sev-bar-warning  { background: rgba(180,83,9,0.12);  border-color: rgba(217,119,6,0.3); }
+    .sev-bar-urgent   { background: rgba(194,65,12,0.12); border-color: rgba(234,88,12,0.35); }
+    .sev-bar-critical { background: rgba(185,28,28,0.15); border-color: rgba(220,38,38,0.4); }
+    .sev-bar-level {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .sev-bar-desc { font-size: 14px; font-weight: 300; color: rgba(203,213,225,0.85); line-height: 1.5; }
+    .sev-bar-route {
+      font-family: var(--font-mono); font-size: 11px; color: rgba(148,163,184,0.7);
+      white-space: nowrap; text-align: right;
+    }
+    .sev-indicator {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 12px 0 0 12px;
+    }
+    .c-normal   { color: #4ade80; } .bg-normal   { background: #22c55e; }
+    .c-warning  { color: #fbbf24; } .bg-warning  { background: #f59e0b; }
+    .c-urgent   { color: #fb923c; } .bg-urgent   { background: #ea580c; }
+    .c-critical { color: #f87171; } .bg-critical { background: #dc2626; }
+
+    /* ─── HOW IT WORKS ───────────────────────────────────────────── */
+    .how-section { background: var(--bg); padding: 6rem 2rem; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3.5rem; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; top: 28px; left: calc(50% / 3 + 16.5%); right: calc(50% / 3 + 16.5%);
+      height: 1px; background: repeating-linear-gradient(90deg, var(--border) 0px, var(--border) 6px, transparent 6px, transparent 12px);
+    }
+    .step { text-align: center; }
+    .step-num {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--primary); color: white;
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+      box-shadow: 0 0 0 8px var(--primary-l);
+      position: relative;
+    }
+    .step-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      color: var(--fg); margin-bottom: 0.6rem; letter-spacing: -0.01em;
+    }
+    .step-desc { font-size: 14px; font-weight: 300; color: var(--fg-muted); line-height: 1.7; }
+
+    /* ─── CTA ─────────────────────────────────────────────────────── */
+    .cta-section {
+      background: var(--nav-bg); padding: 7rem 2rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 70% at 50% 50%, rgba(30,64,175,0.18) 0%, transparent 70%);
+    }
+    .cta-section h2 {
+      font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800; color: white; letter-spacing: -0.02em;
+      margin-bottom: 1rem; position: relative;
+    }
+    .cta-section h2 em { font-style: italic; color: var(--cyan); }
+    .cta-section p { font-size: 16px; font-weight: 300; color: var(--nav-text); margin-bottom: 2.5rem; position: relative; }
+    .btn-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 15px 36px; border-radius: 12px;
+      background: var(--primary); color: white;
+      font-family: var(--font-body); font-size: 15px; font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: pointer; position: relative;
+      animation: ctaPulse 3s ease-in-out infinite;
+    }
+    .btn-cta:hover {
+      background: var(--primary-h); transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(30,64,175,0.5);
+      animation: none;
+    }
+    .btn-cta-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--cyan);
+      animation: heartbeat 1.2s ease-in-out infinite;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────────────────── */
+    footer {
+      background: var(--nav-bg); border-top: 1px solid var(--nav-border);
+      padding: 2rem; text-align: center;
+      font-size: 12px; color: var(--nav-text);
+      font-family: var(--font-mono);
+    }
+
+    /* ─── KEYFRAMES ───────────────────────────────────────────────── */
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.8; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scanDown {
+      0%   { top: -2px; }
+      100% { top: 100%; }
+    }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(30,64,175,0); }
+      50% { box-shadow: 0 0 0 14px rgba(30,64,175,0); }
+    }
+    @keyframes vitalFlash {
+      0% { opacity: 1; } 30% { opacity: 0.5; } 100% { opacity: 1; }
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-monitor { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .mock-vitals { grid-template-columns: repeat(3, 1fr); }
+      .steps { grid-template-columns: 1fr; }
+      .steps::before { display: none; }
+      .sev-bar { grid-template-columns: 100px 1fr; }
+      .sev-bar-route { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ───────────────────────────────────────────────────────── -->
+<nav class="nav" id="nav">
+  <div class="nav-brand">
+    <div class="nav-pulse"></div>
+    PostOp Monitor
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#severity">Severity</a>
+    <a href="#how">How It Works</a>
+    <a href="index.html" class="nav-cta">Open App →</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ───────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="scan-line"></div>
+  <canvas id="ecg-canvas"></canvas>
+
+  <div class="hero-inner">
+
+    <!-- Text -->
+    <div class="hero-text">
+      <div class="eyebrow">Surgical Recovery Intelligence</div>
+      <h1>Every vital.<br /><em>Instantly</em> understood.</h1>
+      <p>
+        Real-time post-operative monitoring with intelligent severity triage.
+        The right clinician is alerted the moment a patient needs them — not after.
+      </p>
+      <div class="hero-actions">
+        <a href="index.html" class="btn-hero-primary">Open Monitor →</a>
+        <a href="#preview" class="btn-hero-ghost">See the dashboard</a>
+      </div>
+    </div>
+
+    <!-- Live monitor -->
+    <div class="hero-monitor">
+      <div class="monitor-frame">
+        <div class="monitor-header">
+          <div class="monitor-title">Patient Monitor · Room 4-212B</div>
+          <div class="monitor-live">
+            <div class="monitor-live-dot"></div>
+            LIVE
+          </div>
+        </div>
+
+        <div class="vitals-grid">
+          <div class="vital-tile" id="tile-hr">
+            <div class="vital-tile-accent accent-normal"></div>
+            <div class="vital-tile-label">Heart Rate</div>
+            <div class="vital-tile-value" id="val-hr">72<span class="vital-tile-unit">bpm</span><span class="vital-tile-trend" id="trend-hr">→</span></div>
+            <canvas class="vital-sparkline-mini" id="spark-hr" width="160" height="32"></canvas>
+          </div>
+
+          <div class="vital-tile" id="tile-spo2">
+            <div class="vital-tile-accent accent-normal"></div>
+            <div class="vital-tile-label">SpO₂</div>
+            <div class="vital-tile-value" id="val-spo2">98<span class="vital-tile-unit">%</span><span class="vital-tile-trend" id="trend-spo2">→</span></div>
+            <canvas class="vital-sparkline-mini" id="spark-spo2" width="160" height="32"></canvas>
+          </div>
+
+          <div class="vital-tile warning" id="tile-bp">
+            <div class="vital-tile-accent accent-warning"></div>
+            <div class="vital-tile-label">Systolic BP</div>
+            <div class="vital-tile-value warning" id="val-bp">118<span class="vital-tile-unit">mmHg</span><span class="vital-tile-trend" id="trend-bp">↑</span></div>
+            <canvas class="vital-sparkline-mini" id="spark-bp" width="160" height="32"></canvas>
+          </div>
+
+          <div class="vital-tile" id="tile-temp">
+            <div class="vital-tile-accent accent-normal"></div>
+            <div class="vital-tile-label">Temperature</div>
+            <div class="vital-tile-value" id="val-temp">98.6<span class="vital-tile-unit">°F</span><span class="vital-tile-trend" id="trend-temp">→</span></div>
+            <canvas class="vital-sparkline-mini" id="spark-temp" width="160" height="32"></canvas>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="hero-status" id="hero-status">
+          <div class="hero-status-dot" id="status-dot"></div>
+          <span class="hero-status-label" id="status-label"></span>
+          <span class="hero-status-reason" id="status-reason"></span>
+          <span class="hero-status-route" id="status-route"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DASHBOARD PREVIEW ─────────────────────────────────────────── -->
+<section class="preview-section" id="preview">
+  <div class="section-inner">
+    <div style="margin-bottom:3rem">
+      <p class="section-label reveal">Dashboard</p>
+      <h2 class="section-title reveal reveal-delay-1">The full picture.<br />At a glance.</h2>
+      <p class="section-sub reveal reveal-delay-2">Every view is designed around one question: <em>does this patient need attention right now?</em></p>
+    </div>
+
+    <div class="browser-frame reveal reveal-delay-2">
+      <div class="browser-chrome">
+        <div class="browser-dot" style="background:#ff5f57"></div>
+        <div class="browser-dot" style="background:#ffbd2e"></div>
+        <div class="browser-dot" style="background:#28c840"></div>
+        <div class="browser-bar">postop-monitor.app/dashboard</div>
+      </div>
+
+      <div class="mock-dash">
+        <!-- Mock Nav -->
+        <div class="mock-nav">
+          <div class="mock-nav-brand">
+            <div class="mock-nav-dot"></div>
+            PostOp Monitor
+          </div>
+          <div class="mock-nav-links">
+            <div class="mock-nav-link active">Dashboard</div>
+            <div class="mock-nav-link">Alerts</div>
+            <div class="mock-nav-link">Provider</div>
+          </div>
+        </div>
+
+        <div class="mock-body">
+          <!-- Patient header -->
+          <div class="mock-patient">
+            <div class="mock-avatar">JD</div>
+            <div>
+              <div class="mock-patient-name">Jane Doe</div>
+              <div class="mock-patient-sub">62y · MRN-2024-88431</div>
+            </div>
+            <div class="mock-patient-meta">
+              <span>📅 POD #1</span>
+              <span>🛏 Room 4-212B</span>
+              <span>Total Hip Arthroplasty (R)</span>
+              <span>Dr. Amara Singh</span>
+              <span class="mock-allergy">⚠ Penicillin, Sulfa</span>
+            </div>
+          </div>
+
+          <!-- Status bar -->
+          <div class="mock-status">
+            <div class="mock-status-dot"></div>
+            <span class="mock-status-text">All Vitals Normal</span>
+            <span class="mock-status-reason">— Patient stable, no intervention required</span>
+            <span style="font-size:10px;color:var(--sev-n-t);opacity:0.7;font-family:var(--font-mono);margin-left:auto">Route → Nurse (Floor)</span>
+          </div>
+
+          <!-- Vitals row -->
+          <div class="mock-vitals">
+            <div class="mock-vital-card" style="border-color:rgba(74,222,128,0.5)">
+              <div class="mock-vital-accent" style="background:#22c55e"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">Heart Rate</div>
+                <div class="mock-vital-val" style="color:#15803d">72<span class="mock-vital-unit">bpm</span></div>
+              </div>
+            </div>
+            <div class="mock-vital-card" style="border-color:rgba(74,222,128,0.5)">
+              <div class="mock-vital-accent" style="background:#22c55e"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">Systolic BP</div>
+                <div class="mock-vital-val" style="color:#15803d">122<span class="mock-vital-unit">mmHg</span></div>
+              </div>
+            </div>
+            <div class="mock-vital-card" style="border-color:rgba(74,222,128,0.5)">
+              <div class="mock-vital-accent" style="background:#22c55e"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">SpO₂</div>
+                <div class="mock-vital-val" style="color:#15803d">98<span class="mock-vital-unit">%</span></div>
+              </div>
+            </div>
+            <div class="mock-vital-card" style="border-color:rgba(245,158,11,0.6)">
+              <div class="mock-vital-accent" style="background:#f59e0b"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">Resp Rate</div>
+                <div class="mock-vital-val" style="color:#b45309">23<span class="mock-vital-unit">br/min</span></div>
+              </div>
+            </div>
+            <div class="mock-vital-card" style="border-color:rgba(74,222,128,0.5)">
+              <div class="mock-vital-accent" style="background:#22c55e"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">Temperature</div>
+                <div class="mock-vital-val" style="color:#15803d">98.6<span class="mock-vital-unit">°F</span></div>
+              </div>
+            </div>
+            <div class="mock-vital-card" style="border-color:rgba(74,222,128,0.5)">
+              <div class="mock-vital-accent" style="background:#22c55e"></div>
+              <div class="mock-vital-inner">
+                <div class="mock-vital-label">Diastolic BP</div>
+                <div class="mock-vital-val" style="color:#15803d">78<span class="mock-vital-unit">mmHg</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom grid -->
+          <div class="mock-bottom">
+            <div class="mock-panel">
+              <div class="mock-panel-title">Triage Status</div>
+              <div class="mock-triage">
+                <div class="mock-triage-icon">🩺</div>
+                <div>
+                  <div class="mock-triage-route">Nurse (Floor)</div>
+                  <div class="mock-triage-reason">All vitals within normal parameters</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--fg-muted);line-height:1.5">Patient stable. SpO₂ 98%, HR 72 bpm. Continue routine monitoring per post-op protocol.</div>
+            </div>
+            <div class="mock-panel">
+              <div class="mock-panel-title">Recent Alerts</div>
+              <div class="mock-alert-row" style="border-color:var(--sev-w-b);background:var(--sev-w-bg)">
+                <span style="font-size:9px;font-weight:700;color:var(--sev-w-t);font-family:var(--font-mono)">WARN</span>
+                <span style="color:var(--fg)">Resp Rate elevated — 23 br/min</span>
+                <span style="margin-left:auto;color:var(--fg-subtle)">4m ago</span>
+              </div>
+              <div class="mock-alert-row" style="border-color:var(--sev-n-b);background:var(--sev-n-bg)">
+                <span style="font-size:9px;font-weight:700;color:var(--sev-n-t);font-family:var(--font-mono)">NORM</span>
+                <span style="color:var(--fg)">All vitals returned to normal</span>
+                <span style="margin-left:auto;color:var(--fg-subtle)">12m ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ──────────────────────────────────────────────────── -->
+<section class="features-section" id="features">
+  <div class="section-inner">
+    <p class="section-label reveal">Core Capabilities</p>
+    <h2 class="section-title reveal reveal-delay-1">Built for the speed<br />of clinical decisions.</h2>
+
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">📡</div>
+        <h3 class="feature-title">Real-Time Vitals</h3>
+        <p class="feature-desc">Six vital parameters updated every second. Heart rate, blood pressure (systolic + diastolic), SpO₂, temperature, and respiratory rate — all tracked with sparkline trend visualization.</p>
+        <div class="feature-stat"><strong>1s</strong> update interval</div>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">🧠</div>
+        <h3 class="feature-title">Intelligent Triage</h3>
+        <p class="feature-desc">Automatic severity classification across four levels — Normal, Warning, Urgent, Critical — with immediate routing to the appropriate care provider and clinical reasoning attached to every alert.</p>
+        <div class="feature-stat"><strong>4-tier</strong> severity engine</div>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">👥</div>
+        <h3 class="feature-title">Role-Based Access</h3>
+        <p class="feature-desc">Nurses, charge nurses, residents, and attendings each see only the alerts that route to them. No alert fatigue from irrelevant noise. Provider-specific inboxes with acknowledge and dismiss workflows.</p>
+        <div class="feature-stat"><strong>4</strong> provider roles</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SEVERITY ──────────────────────────────────────────────────── -->
+<section class="severity-section" id="severity">
+  <div class="section-inner" style="position:relative;z-index:1">
+    <p class="section-label reveal">Severity System</p>
+    <h2 class="section-title reveal reveal-delay-1">Four levels.<br />Zero ambiguity.</h2>
+    <p class="section-sub reveal reveal-delay-2">Every alert carries a severity level that tells the right clinician exactly what action is needed — before they read a single word.</p>
+
+    <div class="severity-bars">
+      <div class="sev-bar sev-bar-normal" id="sev-0">
+        <div class="sev-indicator bg-normal"></div>
+        <div class="sev-bar-level c-normal">● Normal</div>
+        <div class="sev-bar-desc">All vitals within expected post-operative parameters. Routine observation continues.</div>
+        <div class="sev-bar-route c-normal">→ Nurse (Floor)</div>
+      </div>
+      <div class="sev-bar sev-bar-warning" id="sev-1">
+        <div class="sev-indicator bg-warning"></div>
+        <div class="sev-bar-level c-warning">▲ Warning</div>
+        <div class="sev-bar-desc">One or more vitals approaching clinical thresholds. Heightened monitoring indicated.</div>
+        <div class="sev-bar-route c-warning">→ Charge Nurse</div>
+      </div>
+      <div class="sev-bar sev-bar-urgent" id="sev-2">
+        <div class="sev-indicator bg-urgent"></div>
+        <div class="sev-bar-level c-urgent">!! Urgent</div>
+        <div class="sev-bar-desc">Vitals beyond warning thresholds. Physician assessment and intervention required.</div>
+        <div class="sev-bar-route c-urgent">→ Resident Physician</div>
+      </div>
+      <div class="sev-bar sev-bar-critical" id="sev-3">
+        <div class="sev-indicator bg-critical"></div>
+        <div class="sev-bar-level c-critical">✕ Critical</div>
+        <div class="sev-bar-desc">Life-threatening parameter deviation. Rapid Response Team activation required immediately.</div>
+        <div class="sev-bar-route c-critical">→ Attending + Rapid Response</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ──────────────────────────────────────────────── -->
+<section class="how-section" id="how">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:0">
+      <p class="section-label reveal">Workflow</p>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center">From vitals to<br />the right provider.</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">1</div>
+        <h3 class="step-title">Monitor</h3>
+        <p class="step-desc">Patient vitals stream in real-time. Six parameters tracked continuously from the moment monitoring begins.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">2</div>
+        <h3 class="step-title">Triage</h3>
+        <p class="step-desc">The severity engine classifies every reading against clinical thresholds — automatically, on every update cycle.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-num">3</div>
+        <h3 class="step-title">Alert</h3>
+        <p class="step-desc">The right clinician receives a targeted alert — with reason, severity, and recommended action — before it escalates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────────────────────────────── -->
+<section class="cta-section">
+  <div style="position:relative;z-index:1">
+    <h2 class="reveal">Your patients are<br />being monitored <em>right now.</em></h2>
+    <p class="reveal reveal-delay-1">Open the monitor station to see real-time vitals, active alerts, and triage status.</p>
+    <a href="index.html" class="btn-cta reveal reveal-delay-2">
+      <span class="btn-cta-dot"></span>
+      Open Monitor Station
+    </a>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────── -->
+<footer>
+  PostOp Monitor · Light Clinical Theme · Built with Next.js + Tailwind CSS v4
+</footer>
+
+<script>
+  // ─── NAV SCROLL ────────────────────────────────────────────────────
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // ─── ECG CANVAS ────────────────────────────────────────────────────
+  const ecgCanvas = document.getElementById('ecg-canvas');
+  const ecgCtx = ecgCanvas.getContext('2d');
+
+  function resizeECG() {
+    ecgCanvas.width  = ecgCanvas.offsetWidth;
+    ecgCanvas.height = ecgCanvas.offsetHeight;
+  }
+  resizeECG();
+  window.addEventListener('resize', resizeECG);
+
+  function buildECGPath(w, h) {
+    const mid = h / 2;
+    const bw  = 220; // beat width in px
+    const beats = Math.ceil(w / bw) + 2;
+    const pts = [];
+
+    for (let i = -1; i < beats; i++) {
+      const o = i * bw;
+      pts.push([o,       mid]);
+      pts.push([o + 35,  mid]);
+      pts.push([o + 44,  mid - 11]);
+      pts.push([o + 54,  mid]);
+      pts.push([o + 70,  mid]);
+      pts.push([o + 77,  mid + 9]);
+      pts.push([o + 84,  mid - h * 0.72]);
+      pts.push([o + 91,  mid + 12]);
+      pts.push([o + 98,  mid]);
+      pts.push([o + 118, mid]);
+      pts.push([o + 132, mid - 14]);
+      pts.push([o + 152, mid]);
+      pts.push([o + 220, mid]);
+    }
+    return pts;
+  }
+
+  let ecgOffset = 0;
+  let ecgPoints = [];
+  let ecgAnimStart = null;
+  const ECG_DURATION = 3000;
+
+  function drawECG(timestamp) {
+    if (!ecgAnimStart) ecgAnimStart = timestamp;
+    const elapsed = timestamp - ecgAnimStart;
+    const progress = Math.min(elapsed / ECG_DURATION, 1);
+
+    const w = ecgCanvas.width, h = ecgCanvas.height;
+    ecgPoints = buildECGPath(w, h);
+    const totalPoints = ecgPoints.length;
+    const drawTo = Math.floor(totalPoints * progress);
+
+    ecgCtx.clearRect(0, 0, w, h);
+    ecgCtx.beginPath();
+    ecgCtx.strokeStyle = '#22d3ee';
+    ecgCtx.lineWidth = 1.5;
+    ecgCtx.lineJoin = 'round';
+    ecgCtx.lineCap = 'round';
+
+    if (drawTo > 0) {
+      ecgCtx.moveTo(ecgPoints[0][0], ecgPoints[0][1]);
+      for (let i = 1; i < drawTo; i++) {
+        ecgCtx.lineTo(ecgPoints[i][0], ecgPoints[i][1]);
+      }
+      ecgCtx.stroke();
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(drawECG);
+    } else {
+      animateECGScroll();
+    }
+  }
+
+  function animateECGScroll() {
+    let lastTime = null;
+    const speed = 80; // px/sec
+
+    function frame(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const delta = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      ecgOffset = (ecgOffset + speed * delta) % 220;
+
+      const w = ecgCanvas.width, h = ecgCanvas.height;
+      const pts = buildECGPath(w + 220, h);
+      ecgCtx.clearRect(0, 0, w, h);
+
+      ecgCtx.save();
+      ecgCtx.translate(-ecgOffset, 0);
+      ecgCtx.beginPath();
+      ecgCtx.strokeStyle = '#22d3ee';
+      ecgCtx.lineWidth = 1.5;
+      ecgCtx.lineJoin = 'round';
+      ecgCtx.lineCap  = 'round';
+      ecgCtx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ecgCtx.lineTo(pts[i][0], pts[i][1]);
+      ecgCtx.stroke();
+      ecgCtx.restore();
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  setTimeout(() => requestAnimationFrame(drawECG), 400);
+
+  // ─── SPARKLINES ────────────────────────────────────────────────────
+  const sparkData = {
+    hr:   Array.from({length:20}, () => 68 + Math.random() * 10),
+    spo2: Array.from({length:20}, () => 97 + Math.random() * 2),
+    bp:   Array.from({length:20}, () => 110 + Math.random() * 18),
+    temp: Array.from({length:20}, () => 98.3 + Math.random() * 0.6),
+  };
+
+  function drawSparkline(canvasId, data, color) {
+    const c = document.getElementById(canvasId);
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const w = c.width, h = c.height;
+    const min = Math.min(...data) - 1, max = Math.max(...data) + 1;
+    const scaleY = v => h - ((v - min) / (max - min)) * (h - 4) - 2;
+    const scaleX = i => (i / (data.length - 1)) * w;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Area fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, color + '33');
+    grad.addColorStop(1, color + '00');
+    ctx.beginPath();
+    ctx.moveTo(scaleX(0), h);
+    data.forEach((v, i) => ctx.lineTo(scaleX(i), scaleY(v)));
+    ctx.lineTo(scaleX(data.length - 1), h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    data.forEach((v, i) => i === 0 ? ctx.moveTo(scaleX(i), scaleY(v)) : ctx.lineTo(scaleX(i), scaleY(v)));
+    ctx.stroke();
+  }
+
+  function renderAllSparklines() {
+    drawSparkline('spark-hr',   sparkData.hr,   '#22c55e');
+    drawSparkline('spark-spo2', sparkData.spo2, '#22c55e');
+    drawSparkline('spark-bp',   sparkData.bp,   '#f59e0b');
+    drawSparkline('spark-temp', sparkData.temp, '#22c55e');
+  }
+  renderAllSparklines();
+
+  // ─── LIVE VITAL NUMBERS ────────────────────────────────────────────
+  const vitalState = {
+    hr:   { val: 72,   min: 65,  max: 82,  step: 2,   dec: 0 },
+    spo2: { val: 98,   min: 96,  max: 100, step: 1,   dec: 0 },
+    bp:   { val: 118,  min: 110, max: 135, step: 3,   dec: 0 },
+    temp: { val: 98.6, min: 98.2,max: 99.1,step: 0.1, dec: 1 },
+  };
+
+  function updateVital(key) {
+    const s = vitalState[key];
+    const delta = (Math.random() - 0.45) * s.step;
+    s.val = Math.max(s.min, Math.min(s.max, s.val + delta));
+
+    const display = s.val.toFixed(s.dec);
+    const hist = sparkData[key];
+    hist.push(s.val);
+    if (hist.length > 20) hist.shift();
+
+    const recent = hist.slice(-4);
+    const trend = recent[recent.length-1] - recent[0];
+    const trendSym = Math.abs(trend) < (s.step * 0.5) ? '→' : trend > 0 ? '↑' : '↓';
+
+    const el = document.getElementById('val-' + key);
+    const unit = el.querySelector('.vital-tile-unit').outerHTML;
+    const trendEl = el.querySelector('.vital-tile-trend');
+    const prevTrend = trendEl.textContent;
+    el.innerHTML = display + unit + `<span class="vital-tile-trend" id="trend-${key}">${trendSym}</span>`;
+
+    el.style.animation = 'vitalFlash 0.4s ease';
+    setTimeout(() => el.style.animation = '', 400);
+  }
+
+  function tickVitals() {
+    ['hr','spo2','bp','temp'].forEach(k => updateVital(k));
+    renderAllSparklines();
+  }
+  setTimeout(() => {
+    tickVitals();
+    setInterval(tickVitals, 2000);
+  }, 1000);
+
+  // ─── STATUS BAR CYCLING ────────────────────────────────────────────
+  const statuses = [
+    { bg:'rgba(21,128,61,0.15)',  border:'rgba(22,163,74,0.4)',  dot:'#22c55e', labelColor:'#4ade80', label:'ALL NORMAL',  reason:'All vitals within expected parameters', route:'→ Nurse (Floor)' },
+    { bg:'rgba(180,83,9,0.15)',   border:'rgba(217,119,6,0.4)',  dot:'#f59e0b', labelColor:'#fbbf24', label:'WARNING',     reason:'Heart rate trending above 110 bpm',     route:'→ Charge Nurse' },
+    { bg:'rgba(194,65,12,0.15)',  border:'rgba(234,88,12,0.4)',  dot:'#ea580c', labelColor:'#fb923c', label:'URGENT',      reason:'SpO₂ declining, BP unstable',           route:'→ Resident' },
+    { bg:'rgba(185,28,28,0.2)',   border:'rgba(220,38,38,0.5)',  dot:'#ef4444', labelColor:'#f87171', label:'CRITICAL',    reason:'BP 78 mmHg · SpO₂ 86% — Rapid Response',route:'→ Attending + RRT' },
+  ];
+  let statusIdx = 0;
+
+  function cycleStatus() {
+    const s = statuses[statusIdx];
+    const bar = document.getElementById('hero-status');
+    bar.style.background = s.bg;
+    bar.style.borderColor = s.border;
+    document.getElementById('status-dot').style.background = s.dot;
+    document.getElementById('status-label').textContent = s.label;
+    document.getElementById('status-label').style.color = s.labelColor;
+    document.getElementById('status-reason').textContent = s.reason;
+    document.getElementById('status-reason').style.color = s.labelColor;
+    document.getElementById('status-route').textContent = s.route;
+    document.getElementById('status-route').style.color = s.labelColor;
+
+    if (statusIdx === 3) {
+      document.getElementById('status-dot').style.animation = 'heartbeat 0.8s ease-in-out infinite';
+    } else {
+      document.getElementById('status-dot').style.animation = '';
+    }
+
+    statusIdx = (statusIdx + 1) % statuses.length;
+  }
+  cycleStatus();
+  setInterval(cycleStatus, 3500);
+
+  // ─── SCROLL REVEALS ────────────────────────────────────────────────
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { rootMargin: '-8% 0px -8% 0px' });
+  reveals.forEach(el => revealObs.observe(el));
+
+  // Severity bars with left-slide
+  const sevBars = document.querySelectorAll('.sev-bar');
+  const sevObs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        const idx = Array.from(sevBars).indexOf(e.target);
+        setTimeout(() => e.target.classList.add('visible'), idx * 120);
+      }
+    });
+  }, { rootMargin: '-10% 0px -10% 0px' });
+  sevBars.forEach(el => sevObs.observe(el));
+</script>
+
+</body>
+</html>

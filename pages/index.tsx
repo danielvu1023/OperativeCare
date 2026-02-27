@@ -5,6 +5,7 @@ import SimulationControls from "@/components/SimulationControls";
 import VitalsMonitor from "@/components/VitalsMonitor";
 import TriagePanel from "@/components/TriagePanel";
 import AlertFeed from "@/components/AlertFeed";
+import StatusBar from "@/components/StatusBar";
 
 export default function Dashboard() {
   const { current, history, playing, scenario, togglePlay, reset, triggerCritical } =
@@ -15,6 +16,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <PatientHeader />
+      <StatusBar triage={triage} />
       <SimulationControls
         playing={playing}
         scenario={scenario}

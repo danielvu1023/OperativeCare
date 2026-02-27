@@ -10,6 +10,7 @@ import VitalsMonitor from "@/components/VitalsMonitor";
 import TriagePanel from "@/components/TriagePanel";
 import ProviderAlertFeed from "@/components/ProviderAlertFeed";
 import RoleHeader from "@/components/RoleHeader";
+import StatusBar from "@/components/StatusBar";
 
 export default function ProviderDashboard() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function ProviderDashboard() {
     <div className="space-y-4">
       <RoleHeader />
       <PatientHeader />
+      <StatusBar triage={triage} />
       <SimulationControls
         playing={playing}
         scenario={scenario}

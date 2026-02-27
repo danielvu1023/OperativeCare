@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PostOp Monitor — Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── TOKENS ────────────────────────────────────────────────────── */
+    :root {
+      --background:        #f8fafc;
+      --surface:           #ffffff;
+      --surface-raised:    #f1f5f9;
+      --border:            #e2e8f0;
+      --border-strong:     #cbd5e1;
+      --foreground:        #0f172a;
+      --foreground-muted:  #475569;
+      --foreground-subtle: #94a3b8;
+      --primary:           #1e40af;
+      --primary-hover:     #1d4ed8;
+      --primary-light:     #eff6ff;
+      --primary-foreground:#ffffff;
+
+      --severity-normal-bg:       #f0fdf4;
+      --severity-normal-border:   #16a34a;
+      --severity-normal-text:     #15803d;
+      --severity-warning-bg:      #fffbeb;
+      --severity-warning-border:  #d97706;
+      --severity-warning-text:    #b45309;
+      --severity-urgent-bg:       #fff7ed;
+      --severity-urgent-border:   #ea580c;
+      --severity-urgent-text:     #c2410c;
+      --severity-critical-bg:     #fef2f2;
+      --severity-critical-border: #dc2626;
+      --severity-critical-text:   #b91c1c;
+
+      --nav-bg:          #0f172a;
+      --nav-border:      #1e293b;
+      --nav-text:        #94a3b8;
+      --nav-text-active: #ffffff;
+      --nav-item-active: #1e293b;
+    }
+
+    /* ─── RESET & BASE ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--background);
+      color: var(--foreground);
+      font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface-raised); }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--foreground-subtle); }
+
+    /* ─── LAYOUT ────────────────────────────────────────────────────── */
+    .page-header {
+      background: var(--nav-bg);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--nav-border);
+    }
+    .page-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+    .page-header-brand .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22d3ee;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .page-header-tag {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--nav-text);
+      background: var(--nav-item-active);
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+    .sidebar {
+      background: var(--nav-bg);
+      border-right: 1px solid var(--nav-border);
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+    }
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--nav-text);
+      opacity: 0.5;
+      padding: 0.75rem 1.25rem 0.3rem;
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.4rem 1.25rem;
+      font-size: 13px;
+      color: var(--nav-text);
+      text-decoration: none;
+      border-radius: 0;
+      transition: color 0.15s, background 0.15s;
+    }
+    .sidebar a:hover {
+      color: var(--nav-text-active);
+      background: var(--nav-item-hover);
+    }
+    .sidebar a.active {
+      color: var(--nav-text-active);
+      background: var(--nav-item-active);
+    }
+    .content {
+      padding: 3rem 3.5rem;
+      max-width: 960px;
+    }
+
+    /* ─── SECTION ───────────────────────────────────────────────────── */
+    section {
+      margin-bottom: 4rem;
+      scroll-margin-top: 80px;
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--foreground);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--foreground-muted);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 3.5rem 0;
+    }
+
+    /* ─── CARDS ─────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--foreground-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.75rem 1rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-raised);
+    }
+    .card-body { padding: 1.25rem; }
+
+    /* ─── TOKEN TABLE ───────────────────────────────────────────────── */
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .token-swatch {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .token-color {
+      height: 64px;
+      width: 100%;
+    }
+    .token-info { padding: 8px 10px; }
+    .token-name {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      color: var(--foreground-muted);
+      margin-bottom: 2px;
+      word-break: break-all;
+    }
+    .token-hex {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    .token-desc {
+      font-size: 11px;
+      color: var(--foreground-subtle);
+      margin-top: 2px;
+    }
+
+    /* ─── SEVERITY BLOCK ─────────────────────────────────────────────── */
+    .severity-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .severity-card {
+      border-radius: 12px;
+      border-width: 1px;
+      border-style: solid;
+      overflow: hidden;
+    }
+    .severity-header {
+      padding: 10px 14px 8px;
+      border-bottom-width: 1px;
+      border-bottom-style: solid;
+    }
+    .severity-level {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .severity-body { padding: 12px 14px; }
+    .severity-swatch-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .severity-swatch {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .severity-token-list { list-style: none; }
+    .severity-token-list li {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .severity-token-list li:last-child { border-bottom: none; }
+    .stl-key {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--foreground-muted);
+    }
+    .stl-val {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 500;
+    }
+
+    /* ─── TYPOGRAPHY ─────────────────────────────────────────────────── */
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .type-row:last-child { border-bottom: none; }
+    .type-meta {
+      min-width: 140px;
+      flex-shrink: 0;
+    }
+    .type-meta-size {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--foreground-muted);
+    }
+    .type-meta-weight {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      color: var(--foreground-subtle);
+    }
+    .type-sample { color: var(--foreground); }
+
+    /* ─── COMPONENTS ─────────────────────────────────────────────────── */
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-width: 1px;
+      border-style: solid;
+    }
+
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--surface-raised);
+      color: var(--foreground);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-destructive {
+      background: var(--severity-critical-bg);
+      color: var(--severity-critical-text);
+      border-color: var(--severity-critical-border);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--foreground-muted);
+      border-color: transparent;
+    }
+    .btn-ghost:hover { background: var(--surface-raised); color: var(--foreground); }
+
+    /* Vital card */
+    .vital-card {
+      position: relative;
+      overflow: hidden;
+      border: 2px solid;
+      border-radius: 12px;
+      transition: box-shadow 0.2s;
+    }
+    .vital-accent {
+      position: absolute;
+      top: 0; bottom: 0; left: 0;
+      width: 6px;
+    }
+    .vital-inner { padding: 1rem; }
+    .vital-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .vital-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--foreground-muted);
+    }
+    .vital-range {
+      font-size: 11px;
+      color: var(--foreground-subtle);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .vital-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .vital-unit {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--foreground-subtle);
+      margin-left: 3px;
+    }
+    .vital-trend {
+      font-size: 14px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .vital-sparkline {
+      height: 48px;
+      margin-top: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.03) 100%);
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 4px 2px 2px;
+    }
+    .sparkline-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      min-height: 4px;
+      transition: height 0.3s ease;
+    }
+
+    /* Status bar */
+    .status-bar {
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-width: 1px;
+      border-style: solid;
+      transition: all 0.4s ease;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-icon { font-size: 14px; flex-shrink: 0; }
+    .status-label { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .status-reason { font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .status-route { font-size: 11px; font-weight: 500; flex-shrink: 0; opacity: 0.7; }
+
+    /* Alert row */
+    .alert-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      font-size: 13px;
+    }
+    .alert-reason { font-weight: 500; color: var(--foreground); }
+    .alert-meta { font-size: 11px; color: var(--foreground-subtle); margin-top: 2px; }
+
+    /* Nav demo */
+    .nav-demo {
+      background: var(--nav-bg);
+      border: 1px solid var(--nav-border);
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--nav-text);
+      cursor: pointer;
+    }
+    .nav-item.active {
+      background: var(--nav-item-active);
+      color: var(--nav-text-active);
+    }
+    .nav-item:hover:not(.active) {
+      background: var(--nav-item-hover);
+      color: var(--nav-text-active);
+    }
+
+    /* Patient header demo */
+    .patient-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .patient-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Code block */
+    .code-block {
+      background: var(--nav-bg);
+      border: 1px solid var(--nav-border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #94a3b8;
+      overflow-x: auto;
+    }
+    .code-block .token-var { color: #7dd3fc; }
+    .code-block .token-val { color: #86efac; }
+    .code-block .token-comment { color: #475569; font-style: italic; }
+
+    /* Spacing demo */
+    .spacing-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .spacing-row:last-child { border-bottom: none; }
+    .spacing-bar-wrap { display: flex; align-items: center; flex: 1; }
+    .spacing-bar {
+      height: 20px;
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+    }
+    .spacing-label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      min-width: 48px;
+      color: var(--foreground-muted);
+    }
+    .spacing-px {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--foreground-subtle);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* Radius demo */
+    .radius-grid {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .radius-box {
+      width: 80px;
+      height: 80px;
+      background: var(--primary-light);
+      border: 2px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .radius-label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Shadow demo */
+    .shadow-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .shadow-box {
+      width: 120px;
+      height: 80px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .shadow-name {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      color: var(--foreground-muted);
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.15); }
+    }
+    @keyframes pulse-critical {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    .pulse-fast { animation: pulse 1s ease-in-out infinite; }
+
+    /* Grid helpers */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .flex-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+    .stack { display: flex; flex-direction: column; gap: 8px; }
+
+    /* Intro hero */
+    .hero {
+      padding: 2.5rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.5rem;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .hero-title {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--foreground);
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+    }
+    .hero-title span { color: var(--primary); }
+    .hero-sub {
+      font-size: 15px;
+      color: var(--foreground-muted);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .hero-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--foreground);
+      font-family: "JetBrains Mono", monospace;
+      letter-spacing: -0.02em;
+    }
+    .hero-stat-label {
+      font-size: 11px;
+      color: var(--foreground-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── PAGE HEADER ──────────────────────────────────────────────────── -->
+<header class="page-header">
+  <div class="page-header-brand">
+    <div class="pulse-dot"></div>
+    PostOp Monitor
+  </div>
+  <span class="page-header-tag">Design System v1.0</span>
+</header>
+
+<!-- ─── LAYOUT ──────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar nav -->
+  <nav class="sidebar">
+    <div class="sidebar-section-label">Foundation</div>
+    <a href="#colors">Color Tokens</a>
+    <a href="#severity">Severity Palette</a>
+    <a href="#typography">Typography</a>
+    <a href="#spacing">Spacing & Radius</a>
+
+    <div class="sidebar-section-label" style="margin-top:1rem">Components</div>
+    <a href="#badges">Severity Badges</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#vitals">Vital Cards</a>
+    <a href="#statusbar">Status Bar</a>
+    <a href="#alerts">Alert Rows</a>
+    <a href="#nav">Navigation</a>
+    <a href="#patient">Patient Header</a>
+
+    <div class="sidebar-section-label" style="margin-top:1rem">Reference</div>
+    <a href="#tokens-code">Token Reference</a>
+  </nav>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Hero -->
+    <div class="hero">
+      <p class="hero-eyebrow">Light Clinical Theme</p>
+      <h1 class="hero-title">PostOp Monitor<br /><span>Design System</span></h1>
+      <p class="hero-sub">
+        A WCAG AA-compliant design language built for well-lit clinical environments.
+        Professional white surfaces, medical trust blue, and severity-calibrated
+        status tokens optimized for rapid visual triage at a glance.
+      </p>
+      <div class="hero-meta">
+        <div class="hero-stat">
+          <span class="hero-stat-value">26</span>
+          <span class="hero-stat-label">CSS Tokens</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">4</span>
+          <span class="hero-stat-label">Severity Levels</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">4.5:1</span>
+          <span class="hero-stat-label">Min Contrast (WCAG AA)</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value">Inter</span>
+          <span class="hero-stat-label">Primary Typeface</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── COLORS ──────────────────────────────────────────────────── -->
+    <section id="colors">
+      <p class="section-label">Foundation</p>
+      <h2 class="section-title">Color Tokens</h2>
+      <p class="section-desc">
+        All colors are defined as CSS custom properties on <code>:root</code> and exposed
+        as Tailwind utilities via the <code>@theme inline</code> block. Never use raw hex values
+        in components — always reference a token.
+      </p>
+
+      <!-- Surfaces -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-label">Surfaces &amp; Borders</div>
+        <div class="card-body">
+          <div class="token-grid">
+            <div class="token-swatch">
+              <div class="token-color" style="background:#f8fafc;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--background</div>
+                <div class="token-hex">#f8fafc</div>
+                <div class="token-desc">Page background</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#ffffff;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--surface</div>
+                <div class="token-hex">#ffffff</div>
+                <div class="token-desc">Cards, modals</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#f1f5f9;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--surface-raised</div>
+                <div class="token-hex">#f1f5f9</div>
+                <div class="token-desc">Secondary panels</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#e2e8f0;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--border</div>
+                <div class="token-hex">#e2e8f0</div>
+                <div class="token-desc">Default border</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#cbd5e1;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--border-strong</div>
+                <div class="token-hex">#cbd5e1</div>
+                <div class="token-desc">Emphasized border</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Foreground -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-label">Text &amp; Foreground</div>
+        <div class="card-body">
+          <div class="token-grid">
+            <div class="token-swatch">
+              <div class="token-color" style="background:#0f172a"></div>
+              <div class="token-info">
+                <div class="token-name">--foreground</div>
+                <div class="token-hex">#0f172a</div>
+                <div class="token-desc">Body text, headings</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#475569"></div>
+              <div class="token-info">
+                <div class="token-name">--foreground-muted</div>
+                <div class="token-hex">#475569</div>
+                <div class="token-desc">Labels, captions</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#94a3b8"></div>
+              <div class="token-info">
+                <div class="token-name">--foreground-subtle</div>
+                <div class="token-hex">#94a3b8</div>
+                <div class="token-desc">Placeholders, hints</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-label">Primary (Trust Blue)</div>
+        <div class="card-body">
+          <div class="token-grid">
+            <div class="token-swatch">
+              <div class="token-color" style="background:#1e40af"></div>
+              <div class="token-info">
+                <div class="token-name">--primary</div>
+                <div class="token-hex">#1e40af</div>
+                <div class="token-desc">Actions, links</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#1d4ed8"></div>
+              <div class="token-info">
+                <div class="token-name">--primary-hover</div>
+                <div class="token-hex">#1d4ed8</div>
+                <div class="token-desc">Hover state</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#eff6ff;border-bottom:1px solid #e2e8f0"></div>
+              <div class="token-info">
+                <div class="token-name">--primary-light</div>
+                <div class="token-hex">#eff6ff</div>
+                <div class="token-desc">Tinted backgrounds</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav dark -->
+      <div class="card">
+        <div class="card-label">Navigation (Dark — invariant)</div>
+        <div class="card-body">
+          <div class="token-grid">
+            <div class="token-swatch">
+              <div class="token-color" style="background:#0f172a"></div>
+              <div class="token-info">
+                <div class="token-name">--nav-bg</div>
+                <div class="token-hex">#0f172a</div>
+                <div class="token-desc">Nav background</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#1e293b"></div>
+              <div class="token-info">
+                <div class="token-name">--nav-border</div>
+                <div class="token-hex">#1e293b</div>
+                <div class="token-desc">Nav border / active bg</div>
+              </div>
+            </div>
+            <div class="token-swatch">
+              <div class="token-color" style="background:#94a3b8"></div>
+              <div class="token-info">
+                <div class="token-name">--nav-text</div>
+                <div class="token-hex">#94a3b8</div>
+                <div class="token-desc">Inactive nav items</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── SEVERITY ────────────────────────────────────────────────── -->
+    <section id="severity">
+      <p class="section-label">Foundation</p>
+      <h2 class="section-title">Severity Palette</h2>
+      <p class="section-desc">
+        Four-tier severity system with background, border, and text tokens per level.
+        Calibrated for WCAG AA contrast in well-lit clinical environments.
+        Each level has 3 tokens: <code>-bg</code>, <code>-border</code>, <code>-text</code>.
+      </p>
+
+      <div class="severity-grid">
+
+        <!-- Normal -->
+        <div class="severity-card" style="background:#f0fdf4;border-color:#16a34a">
+          <div class="severity-header" style="background:#dcfce7;border-bottom-color:#16a34a">
+            <div class="severity-level" style="color:#15803d">● Normal</div>
+          </div>
+          <div class="severity-body">
+            <div class="severity-swatch-row">
+              <div class="severity-swatch" style="background:#f0fdf4"></div>
+              <div class="severity-swatch" style="background:#16a34a"></div>
+              <div class="severity-swatch" style="background:#15803d"></div>
+            </div>
+            <ul class="severity-token-list">
+              <li>
+                <span class="stl-key">-bg</span>
+                <span class="stl-val" style="color:#15803d">#f0fdf4</span>
+              </li>
+              <li>
+                <span class="stl-key">-border</span>
+                <span class="stl-val" style="color:#15803d">#16a34a</span>
+              </li>
+              <li>
+                <span class="stl-key">-text</span>
+                <span class="stl-val" style="color:#15803d">#15803d</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="severity-card" style="background:#fffbeb;border-color:#d97706">
+          <div class="severity-header" style="background:#fef3c7;border-bottom-color:#d97706">
+            <div class="severity-level" style="color:#b45309">▲ Warning</div>
+          </div>
+          <div class="severity-body">
+            <div class="severity-swatch-row">
+              <div class="severity-swatch" style="background:#fffbeb"></div>
+              <div class="severity-swatch" style="background:#d97706"></div>
+              <div class="severity-swatch" style="background:#b45309"></div>
+            </div>
+            <ul class="severity-token-list">
+              <li>
+                <span class="stl-key">-bg</span>
+                <span class="stl-val" style="color:#b45309">#fffbeb</span>
+              </li>
+              <li>
+                <span class="stl-key">-border</span>
+                <span class="stl-val" style="color:#b45309">#d97706</span>
+              </li>
+              <li>
+                <span class="stl-key">-text</span>
+                <span class="stl-val" style="color:#b45309">#b45309</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Urgent -->
+        <div class="severity-card" style="background:#fff7ed;border-color:#ea580c">
+          <div class="severity-header" style="background:#ffedd5;border-bottom-color:#ea580c">
+            <div class="severity-level" style="color:#c2410c">!! Urgent</div>
+          </div>
+          <div class="severity-body">
+            <div class="severity-swatch-row">
+              <div class="severity-swatch" style="background:#fff7ed"></div>
+              <div class="severity-swatch" style="background:#ea580c"></div>
+              <div class="severity-swatch" style="background:#c2410c"></div>
+            </div>
+            <ul class="severity-token-list">
+              <li>
+                <span class="stl-key">-bg</span>
+                <span class="stl-val" style="color:#c2410c">#fff7ed</span>
+              </li>
+              <li>
+                <span class="stl-key">-border</span>
+                <span class="stl-val" style="color:#c2410c">#ea580c</span>
+              </li>
+              <li>
+                <span class="stl-key">-text</span>
+                <span class="stl-val" style="color:#c2410c">#c2410c</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Critical -->
+        <div class="severity-card" style="background:#fef2f2;border-color:#dc2626">
+          <div class="severity-header" style="background:#fee2e2;border-bottom-color:#dc2626">
+            <div class="severity-level" style="color:#b91c1c">✕ Critical</div>
+          </div>
+          <div class="severity-body">
+            <div class="severity-swatch-row">
+              <div class="severity-swatch" style="background:#fef2f2"></div>
+              <div class="severity-swatch" style="background:#dc2626"></div>
+              <div class="severity-swatch" style="background:#b91c1c"></div>
+            </div>
+            <ul class="severity-token-list">
+              <li>
+                <span class="stl-key">-bg</span>
+                <span class="stl-val" style="color:#b91c1c">#fef2f2</span>
+              </li>
+              <li>
+                <span class="stl-key">-border</span>
+                <span class="stl-val" style="color:#b91c1c">#dc2626</span>
+              </li>
+              <li>
+                <span class="stl-key">-text</span>
+                <span class="stl-val" style="color:#b91c1c">#b91c1c</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── TYPOGRAPHY ──────────────────────────────────────────────── -->
+    <section id="typography">
+      <p class="section-label">Foundation</p>
+      <h2 class="section-title">Typography</h2>
+      <p class="section-desc">
+        Inter for all UI text. JetBrains Mono for numeric values, token names,
+        timestamps, and clinical measurements. Heavy reliance on weight and
+        letter-spacing over size variation.
+      </p>
+
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-label">Type Scale — Inter</div>
+        <div class="card-body">
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">36px / 800</div>
+              <div class="type-meta-weight">Hero, display</div>
+            </div>
+            <div class="type-sample" style="font-size:36px;font-weight:800;letter-spacing:-0.03em;line-height:1.1">Patient Status</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">22px / 700</div>
+              <div class="type-meta-weight">Section headings</div>
+            </div>
+            <div class="type-sample" style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Alert History</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">18px / 600</div>
+              <div class="type-meta-weight">Card headings</div>
+            </div>
+            <div class="type-sample" style="font-size:18px;font-weight:600">Jane Doe — MRN 88431</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">15px / 500</div>
+              <div class="type-meta-weight">Body / nav items</div>
+            </div>
+            <div class="type-sample" style="font-size:15px;font-weight:500">Total Hip Arthroplasty (R), Post-Op Day 1</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">13px / 400</div>
+              <div class="type-meta-weight">Default body</div>
+            </div>
+            <div class="type-sample" style="font-size:13px;color:var(--foreground-muted)">SpO₂ dropped below warning threshold of 92%. Patient requires monitoring.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">11px / 600</div>
+              <div class="type-meta-weight">Labels / uppercase</div>
+            </div>
+            <div class="type-sample" style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--foreground-muted)">Heart Rate · Triage Status · Route To</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">10px / 600</div>
+              <div class="type-meta-weight">Section labels</div>
+            </div>
+            <div class="type-sample" style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--primary)">Foundation · Components · Patterns</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">JetBrains Mono — Numerics &amp; Code</div>
+        <div class="card-body">
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">28px / 700</div>
+              <div class="type-meta-weight">Vital values</div>
+            </div>
+            <div class="type-sample" style="font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--severity-normal-text);font-variant-numeric:tabular-nums">
+              98 <span style="font-size:14px;font-weight:400;color:var(--foreground-subtle)">%</span>
+            </div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">13px / 500</div>
+              <div class="type-meta-weight">Timestamps</div>
+            </div>
+            <div class="type-sample" style="font-size:13px;font-weight:500;font-family:'JetBrains Mono',monospace;color:var(--foreground-muted)">
+              3m ago &middot; 14:23:07
+            </div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">
+              <div class="type-meta-size">12px / 400</div>
+              <div class="type-meta-weight">Token names</div>
+            </div>
+            <div class="type-sample" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--foreground-muted)">
+              --severity-critical-text &nbsp; bg-surface-raised &nbsp; text-foreground-muted
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── SPACING ─────────────────────────────────────────────────── -->
+    <section id="spacing">
+      <p class="section-label">Foundation</p>
+      <h2 class="section-title">Spacing &amp; Radius</h2>
+      <p class="section-desc">
+        Tailwind's 4px base unit. Clinical interfaces lean toward generous internal
+        padding and tight inter-element gaps. Border radius follows a consistent
+        scale: small interactive targets use <code>rounded-lg</code> (8px),
+        cards use <code>rounded-xl</code> (12px).
+      </p>
+
+      <div class="grid-2" style="margin-bottom:1.5rem">
+        <div class="card">
+          <div class="card-label">Key Spacing Values</div>
+          <div class="card-body">
+            <div class="spacing-row">
+              <span class="spacing-label">space-1</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:4px"></div></div>
+              <span class="spacing-px">4px</span>
+            </div>
+            <div class="spacing-row">
+              <span class="spacing-label">space-2</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:8px"></div></div>
+              <span class="spacing-px">8px</span>
+            </div>
+            <div class="spacing-row">
+              <span class="spacing-label">space-3</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:12px"></div></div>
+              <span class="spacing-px">12px</span>
+            </div>
+            <div class="spacing-row">
+              <span class="spacing-label">space-4</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:16px"></div></div>
+              <span class="spacing-px">16px</span>
+            </div>
+            <div class="spacing-row">
+              <span class="spacing-label">space-5</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:20px"></div></div>
+              <span class="spacing-px">20px</span>
+            </div>
+            <div class="spacing-row">
+              <span class="spacing-label">space-6</span>
+              <div class="spacing-bar-wrap"><div class="spacing-bar" style="width:24px"></div></div>
+              <span class="spacing-px">24px</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Border Radius</div>
+          <div class="card-body">
+            <div class="radius-grid">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="radius-box" style="border-radius:4px">
+                  <span class="radius-label">rounded</span>
+                  <span style="font-size:10px;color:var(--primary);font-family:'JetBrains Mono',monospace">4px</span>
+                </div>
+                <span style="font-size:11px;color:var(--foreground-subtle)">Badges</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="radius-box" style="border-radius:8px">
+                  <span class="radius-label">rounded-lg</span>
+                  <span style="font-size:10px;color:var(--primary);font-family:'JetBrains Mono',monospace">8px</span>
+                </div>
+                <span style="font-size:11px;color:var(--foreground-subtle)">Buttons</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="radius-box" style="border-radius:12px">
+                  <span class="radius-label">rounded-xl</span>
+                  <span style="font-size:10px;color:var(--primary);font-family:'JetBrains Mono',monospace">12px</span>
+                </div>
+                <span style="font-size:11px;color:var(--foreground-subtle)">Cards</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                <div class="radius-box" style="border-radius:9999px">
+                  <span class="radius-label">rounded-full</span>
+                  <span style="font-size:10px;color:var(--primary);font-family:'JetBrains Mono',monospace">9999px</span>
+                </div>
+                <span style="font-size:11px;color:var(--foreground-subtle)">Pills</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Elevation (Box Shadow)</div>
+        <div class="card-body">
+          <div class="shadow-row">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div class="shadow-box">
+                <span class="shadow-name">none</span>
+              </div>
+              <span style="font-size:11px;color:var(--foreground-subtle)">Normal vitals</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div class="shadow-box" style="box-shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.05)">
+                <span class="shadow-name">shadow-sm</span>
+              </div>
+              <span style="font-size:11px;color:var(--foreground-subtle)">Warning vitals</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div class="shadow-box" style="box-shadow:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06)">
+                <span class="shadow-name">shadow-md</span>
+              </div>
+              <span style="font-size:11px;color:var(--foreground-subtle)">Critical vitals</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div class="shadow-box" style="box-shadow:0 10px 15px rgba(0,0,0,0.07),0 4px 6px rgba(0,0,0,0.05)">
+                <span class="shadow-name">shadow-lg</span>
+              </div>
+              <span style="font-size:11px;color:var(--foreground-subtle)">Modals, dropdowns</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── BADGES ──────────────────────────────────────────────────── -->
+    <section id="badges">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Severity Badges</h2>
+      <p class="section-desc">
+        Pill-shaped labels using the severity token trio. Used in alert feeds,
+        triage panels, and inline with patient data. Always uppercase with
+        generous letter-spacing for legibility at small sizes.
+      </p>
+
+      <div class="card">
+        <div class="card-label">All States</div>
+        <div class="card-body">
+          <div class="flex-wrap" style="align-items:center">
+            <span class="badge" style="background:var(--severity-normal-bg);color:var(--severity-normal-text);border-color:var(--severity-normal-border)">Normal</span>
+            <span class="badge" style="background:var(--severity-warning-bg);color:var(--severity-warning-text);border-color:var(--severity-warning-border)">Warning</span>
+            <span class="badge" style="background:var(--severity-urgent-bg);color:var(--severity-urgent-text);border-color:var(--severity-urgent-border)">Urgent</span>
+            <span class="badge" style="background:var(--severity-critical-bg);color:var(--severity-critical-text);border-color:var(--severity-critical-border)">Critical</span>
+          </div>
+          <div class="flex-wrap" style="align-items:center;margin-top:12px">
+            <span class="badge" style="background:var(--primary-light);color:var(--primary);border-color:var(--primary)">Acknowledged</span>
+            <span class="badge" style="background:var(--surface-raised);color:var(--foreground-muted);border-color:var(--border-strong)">Dismissed</span>
+            <span class="badge" style="background:var(--severity-critical-bg);color:var(--severity-critical-text);border-color:var(--severity-critical-border)">3 Active</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── BUTTONS ─────────────────────────────────────────────────── -->
+    <section id="buttons">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Buttons</h2>
+      <p class="section-desc">
+        Four variants. Primary for the single main action per view.
+        Secondary for supporting actions (sort, filter). Ghost for tertiary
+        inline links. Destructive for irreversible actions only.
+      </p>
+
+      <div class="card">
+        <div class="card-label">Variants</div>
+        <div class="card-body">
+          <div class="flex-wrap">
+            <button class="btn btn-primary">Acknowledge Alert</button>
+            <button class="btn btn-secondary">↕ Newest First</button>
+            <button class="btn btn-ghost">Switch Role</button>
+            <button class="btn btn-destructive">Clear History</button>
+          </div>
+          <div class="flex-wrap" style="margin-top:12px">
+            <button class="btn btn-secondary">▶ Play</button>
+            <button class="btn btn-secondary">↺ Reset to Normal</button>
+            <button class="btn" style="background:#fef2f2;color:#b91c1c;border-color:#dc2626">⚡ Trigger Critical</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── VITAL CARDS ─────────────────────────────────────────────── -->
+    <section id="vitals">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Vital Cards</h2>
+      <p class="section-desc">
+        The core monitoring unit. Left accent bar signals status at a glance.
+        Trend arrow reflects 6-reading rolling average (2.5% threshold).
+        Sparkline height is 64px for clinical readability.
+        Abnormal cards are elevated with tinted backgrounds and box-shadow.
+      </p>
+
+      <div class="grid-3">
+
+        <!-- Normal -->
+        <div class="vital-card" style="background:#ffffff;border-color:rgba(74,222,128,0.5)">
+          <div class="vital-accent" style="background:#22c55e"></div>
+          <div class="vital-inner">
+            <div class="vital-header">
+              <span class="vital-label">SpO₂</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="vital-trend" style="color:#15803d">→</span>
+                <span class="vital-range">92–101</span>
+              </div>
+            </div>
+            <div class="vital-value" style="color:#15803d">98<span class="vital-unit">%</span></div>
+            <div class="vital-sparkline">
+              <div class="sparkline-bar" style="height:60%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:65%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:70%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:68%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:72%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:75%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:78%;background:#86efac"></div>
+              <div class="sparkline-bar" style="height:80%;background:#86efac"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning -->
+        <div class="vital-card" style="background:#fffbeb;border-color:rgba(245,158,11,0.7);box-shadow:0 1px 3px rgba(0,0,0,0.07)">
+          <div class="vital-accent" style="background:#f59e0b"></div>
+          <div class="vital-inner">
+            <div class="vital-header">
+              <span class="vital-label">Heart Rate</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="vital-trend" style="color:#b45309">↑</span>
+                <span class="vital-range">55–110</span>
+              </div>
+            </div>
+            <div class="vital-value" style="color:#b45309">112<span class="vital-unit">bpm</span></div>
+            <div class="vital-sparkline">
+              <div class="sparkline-bar" style="height:40%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:45%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:50%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:55%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:62%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:68%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:75%;background:#fcd34d"></div>
+              <div class="sparkline-bar" style="height:85%;background:#fcd34d"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Critical -->
+        <div class="vital-card" style="background:#fef2f2;border-color:#ef4444;box-shadow:0 4px 6px rgba(0,0,0,0.08)">
+          <div class="vital-accent" style="background:#ef4444"></div>
+          <div class="vital-inner">
+            <div class="vital-header">
+              <span class="vital-label">Systolic BP</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="vital-trend" style="color:#b91c1c">↓</span>
+                <span class="vital-range">95–160</span>
+              </div>
+            </div>
+            <div class="vital-value" style="color:#b91c1c">78<span class="vital-unit">mmHg</span></div>
+            <div class="vital-sparkline">
+              <div class="sparkline-bar" style="height:80%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:72%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:65%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:55%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:45%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:35%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:28%;background:#fca5a5"></div>
+              <div class="sparkline-bar" style="height:22%;background:#fca5a5"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── STATUS BAR ──────────────────────────────────────────────── -->
+    <section id="statusbar">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Status Bar</h2>
+      <p class="section-desc">
+        Full-width contextual band placed directly below PatientHeader.
+        Provides ambient severity awareness — the patient's current state is
+        readable before any detail is read. Critical state uses a solid
+        filled background for maximum urgency.
+      </p>
+
+      <div class="stack">
+        <!-- Normal -->
+        <div class="status-bar" style="background:#f0fdf4;border-color:#16a34a">
+          <span class="status-dot" style="background:#16a34a"></span>
+          <span class="status-icon">✓</span>
+          <span class="status-label" style="color:#15803d">All Vitals Normal</span>
+          <span class="status-reason" style="color:#15803d;opacity:0.8">— Patient stable, no intervention required</span>
+          <span class="status-route" style="color:#15803d">Route → Nurse (Floor)</span>
+        </div>
+
+        <!-- Warning -->
+        <div class="status-bar" style="background:#fffbeb;border-color:#d97706">
+          <span class="status-dot" style="background:#d97706"></span>
+          <span class="status-icon">▲</span>
+          <span class="status-label" style="color:#b45309">Warning</span>
+          <span class="status-reason" style="color:#b45309;opacity:0.8">— Heart rate elevated above 110 bpm threshold</span>
+          <span class="status-route" style="color:#b45309">Route → Charge Nurse</span>
+        </div>
+
+        <!-- Urgent -->
+        <div class="status-bar" style="background:#fff7ed;border-color:#ea580c">
+          <span class="status-dot pulse" style="background:#ea580c"></span>
+          <span class="status-icon">!!</span>
+          <span class="status-label" style="color:#c2410c">Urgent</span>
+          <span class="status-reason" style="color:#c2410c;opacity:0.8">— Systolic BP declining, respiratory rate elevated</span>
+          <span class="status-route" style="color:#c2410c">Route → Resident Physician</span>
+        </div>
+
+        <!-- Critical -->
+        <div class="status-bar" style="background:#dc2626;border-color:#b91c1c">
+          <span class="status-dot pulse-fast" style="background:white"></span>
+          <span class="status-icon" style="color:white">✕</span>
+          <span class="status-label" style="color:white">CRITICAL</span>
+          <span class="status-reason" style="color:white;opacity:0.85">— Systolic BP 78 mmHg, SpO₂ 86% — Rapid Response Required</span>
+          <span class="status-route" style="color:white">Route → Attending + Rapid Response</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── ALERT ROWS ───────────────────────────────────────────────── -->
+    <section id="alerts">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Alert Rows</h2>
+      <p class="section-desc">
+        Left-border accent creates consistent visual vocabulary with vital cards.
+        Critical and urgent rows carry a tinted background for additional weight.
+        Sorted by severity tier first, then by recency. Timestamps are relative.
+      </p>
+
+      <div class="card">
+        <div class="card-label">Alert Feed — sorted by severity</div>
+        <div class="card-body">
+          <div class="stack">
+
+            <div class="alert-row" style="background:#fef2f2;border-left-color:#ef4444">
+              <span class="badge" style="flex-shrink:0;background:#fef2f2;color:#b91c1c;border-color:#dc2626">Critical</span>
+              <div>
+                <div class="alert-reason">Systolic BP critically low — 78 mmHg</div>
+                <div class="alert-meta">just now &middot; Attending + Rapid Response</div>
+              </div>
+            </div>
+
+            <div class="alert-row" style="background:#fff7ed;border-left-color:#ea580c">
+              <span class="badge" style="flex-shrink:0;background:#fff7ed;color:#c2410c;border-color:#ea580c">Urgent</span>
+              <div>
+                <div class="alert-reason">Respiratory rate above urgent threshold — 31 br/min</div>
+                <div class="alert-meta">45s ago &middot; Resident Physician</div>
+              </div>
+            </div>
+
+            <div class="alert-row" style="background:#fffbeb;border-left-color:#f59e0b">
+              <span class="badge" style="flex-shrink:0;background:#fffbeb;color:#b45309;border-color:#d97706">Warning</span>
+              <div>
+                <div class="alert-reason">Heart rate elevated — 112 bpm</div>
+                <div class="alert-meta">3m ago &middot; Charge Nurse</div>
+              </div>
+            </div>
+
+            <div class="alert-row" style="background:#f1f5f9;border-left-color:#22c55e">
+              <span class="badge" style="flex-shrink:0;background:#f0fdf4;color:#15803d;border-color:#16a34a">Normal</span>
+              <div>
+                <div class="alert-reason">Vitals returned to normal range</div>
+                <div class="alert-meta">8m ago &middot; Nurse (Floor)</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── NAV ─────────────────────────────────────────────────────── -->
+    <section id="nav">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Navigation</h2>
+      <p class="section-desc">
+        The nav is an invariant dark zone — it never adopts the light theme.
+        This creates a persistent visual anchor that separates chrome from content,
+        and maintains orientation regardless of the content area's severity state.
+      </p>
+
+      <div class="nav-demo">
+        <div style="display:flex;align-items:center;gap:8px;margin-right:auto;padding:0 8px">
+          <div class="pulse-dot"></div>
+          <span style="font-weight:700;font-size:14px;color:white">PostOp Monitor</span>
+        </div>
+        <div class="nav-item active">Dashboard</div>
+        <div class="nav-item">Alerts</div>
+        <div class="nav-item">My Dashboard</div>
+        <div class="nav-item">Inbox</div>
+        <div style="margin-left:8px;padding:0 8px;border-left:1px solid var(--nav-border)">
+          <span style="font-size:11px;color:var(--nav-text);background:var(--nav-item-active);padding:3px 10px;border-radius:20px">Charge Nurse</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── PATIENT HEADER ──────────────────────────────────────────── -->
+    <section id="patient">
+      <p class="section-label">Components</p>
+      <h2 class="section-title">Patient Header</h2>
+      <p class="section-desc">
+        Establishes patient identity at the top of every clinical view.
+        Name uses the largest type size on the page. Allergy is a red badge —
+        visually equal to a warning alert.
+      </p>
+
+      <div class="patient-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="patient-avatar">JD</div>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:var(--foreground);letter-spacing:-0.01em">Jane Doe</div>
+            <div style="font-size:13px;color:var(--foreground-muted)">62y &middot; MRN-2024-88431</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--foreground)">
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="color:var(--foreground-subtle)">📅</span> POD #1
+          </span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span style="color:var(--foreground-subtle)">🛏</span> Room 4-212B
+          </span>
+          <span>Total Hip Arthroplasty (R)</span>
+          <span style="color:var(--foreground-muted)">Surgeon: Dr. Amara Singh</span>
+          <span class="badge" style="background:#fef2f2;color:#b91c1c;border-color:#dc2626">
+            ⚠ Allergies: Penicillin, Sulfa
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── TOKEN REFERENCE ─────────────────────────────────────────── -->
+    <section id="tokens-code">
+      <p class="section-label">Reference</p>
+      <h2 class="section-title">Token Reference</h2>
+      <p class="section-desc">
+        All tokens defined in <code>styles/globals.css</code> under <code>:root</code>.
+        Tailwind utilities are registered via <code>@theme inline</code>.
+        Use the <code>--color-*</code> prefix for Tailwind, bare <code>var(--*)</code> for vanilla CSS.
+      </p>
+
+      <div class="code-block">
+<span class="token-comment">/* styles/globals.css — :root */</span>
+
+<span class="token-comment">/* Surfaces */</span>
+<span class="token-var">--background</span>:        <span class="token-val">#f8fafc</span>;   <span class="token-comment">/* bg-background */</span>
+<span class="token-var">--surface</span>:           <span class="token-val">#ffffff</span>;   <span class="token-comment">/* bg-surface */</span>
+<span class="token-var">--surface-raised</span>:    <span class="token-val">#f1f5f9</span>;   <span class="token-comment">/* bg-surface-raised */</span>
+<span class="token-var">--border</span>:            <span class="token-val">#e2e8f0</span>;   <span class="token-comment">/* border-border */</span>
+<span class="token-var">--border-strong</span>:     <span class="token-val">#cbd5e1</span>;   <span class="token-comment">/* border-border-strong */</span>
+
+<span class="token-comment">/* Foreground */</span>
+<span class="token-var">--foreground</span>:        <span class="token-val">#0f172a</span>;   <span class="token-comment">/* text-foreground */</span>
+<span class="token-var">--foreground-muted</span>:  <span class="token-val">#475569</span>;   <span class="token-comment">/* text-foreground-muted */</span>
+<span class="token-var">--foreground-subtle</span>: <span class="token-val">#94a3b8</span>;   <span class="token-comment">/* text-foreground-subtle */</span>
+
+<span class="token-comment">/* Primary */</span>
+<span class="token-var">--primary</span>:           <span class="token-val">#1e40af</span>;   <span class="token-comment">/* bg-primary / text-primary */</span>
+<span class="token-var">--primary-hover</span>:     <span class="token-val">#1d4ed8</span>;
+<span class="token-var">--primary-light</span>:     <span class="token-val">#eff6ff</span>;   <span class="token-comment">/* bg-primary-light */</span>
+
+<span class="token-comment">/* Severity — normal */</span>
+<span class="token-var">--severity-normal-bg</span>:     <span class="token-val">#f0fdf4</span>;
+<span class="token-var">--severity-normal-border</span>: <span class="token-val">#16a34a</span>;
+<span class="token-var">--severity-normal-text</span>:   <span class="token-val">#15803d</span>;
+
+<span class="token-comment">/* Severity — warning */</span>
+<span class="token-var">--severity-warning-bg</span>:    <span class="token-val">#fffbeb</span>;
+<span class="token-var">--severity-warning-border</span>:<span class="token-val">#d97706</span>;
+<span class="token-var">--severity-warning-text</span>:  <span class="token-val">#b45309</span>;
+
+<span class="token-comment">/* Severity — urgent */</span>
+<span class="token-var">--severity-urgent-bg</span>:     <span class="token-val">#fff7ed</span>;
+<span class="token-var">--severity-urgent-border</span>: <span class="token-val">#ea580c</span>;
+<span class="token-var">--severity-urgent-text</span>:   <span class="token-val">#c2410c</span>;
+
+<span class="token-comment">/* Severity — critical */</span>
+<span class="token-var">--severity-critical-bg</span>:   <span class="token-val">#fef2f2</span>;
+<span class="token-var">--severity-critical-border</span>:<span class="token-val">#dc2626</span>;
+<span class="token-var">--severity-critical-text</span>: <span class="token-val">#b91c1c</span>;
+
+<span class="token-comment">/* Navigation (invariant dark) */</span>
+<span class="token-var">--nav-bg</span>:            <span class="token-val">#0f172a</span>;
+<span class="token-var">--nav-border</span>:        <span class="token-val">#1e293b</span>;
+<span class="token-var">--nav-text</span>:          <span class="token-val">#94a3b8</span>;
+<span class="token-var">--nav-text-active</span>:   <span class="token-val">#ffffff</span>;
+<span class="token-var">--nav-item-active</span>:   <span class="token-val">#1e293b</span>;
+      </div>
+    </section>
+
+    <div style="height:4rem"></div>
+
+  </main>
+</div>
+
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.sidebar a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
